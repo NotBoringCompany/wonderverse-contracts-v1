@@ -3,18 +3,17 @@ pragma solidity ^0.8.26;
 
 import {Initializable} from "@zoralabs/openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@zoralabs/openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import {IZoraCreator1155Factory} from "../interfaces/IZoraCreator1155Factory.sol";
-import {IZoraCreator1155Initializer} from "../interfaces/IZoraCreator1155Initializer.sol";
-import {IZoraCreator1155} from "../interfaces/IZoraCreator1155.sol";
-import {ICreatorRoyaltiesControl} from "../interfaces/ICreatorRoyaltiesControl.sol";
-import {IMinter1155} from "../interfaces/IMinter1155.sol";
-import {IContractMetadata} from "../interfaces/IContractMetadata.sol";
-import {Ownable2StepUpgradeable} from "../utils/ownable/Ownable2StepUpgradeable.sol";
-import {Zora1155} from "../proxies/Zora1155.sol";
+import {IZoraCreator1155Factory} from "./IZoraCreator1155Factory.sol";
+import {IZoraCreator1155Initializer} from "./IZoraCreator1155Initializer.sol";
+import {IZoraCreator1155} from "./IZoraCreator1155.sol";
+import {ICreatorRoyaltiesControl} from "./ICreatorRoyaltiesControl.sol";
+import {IMinter1155} from "./IMinter1155.sol";
+import {IContractMetadata} from "./IContractMetadata.sol";
+import {Ownable2StepUpgradeable} from "./Ownable2StepUpgradeable.sol";
+import {Zora1155} from "./Zora1155.sol";
 import {Create2Upgradeable} from "@zoralabs/openzeppelin-contracts-upgradeable/contracts/utils/Create2Upgradeable.sol";
 import {CREATE3} from "solmate/src/utils/CREATE3.sol";
-
-import {ContractVersionBase} from "../version/ContractVersionBase.sol";
+import {ContractVersionBase} from "./ContractVersionBase.sol";
 
 /// @title ZoraCreator1155FactoryImpl
 /// @notice Factory contract for creating new ZoraCreator1155 contracts
