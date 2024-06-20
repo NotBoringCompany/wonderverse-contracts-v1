@@ -19,6 +19,23 @@ contract WonderbitsPOAPFactory is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
+    // creates a new POAP collection. this should only be called once.
+    function createPOAPCollection(
+        string calldata newContractURI,
+        string calldata name,
+        ICreatorRoyaltiesControl.RoyaltyConfiguration calldata defaultRoyaltyConfiguration,
+        address payable defaultAdmin,
+        bytes[] calldata setupActions
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) returns (address) {
+        return _zoraCreatorFactory.createContract(
+            newContractURI,
+            name,
+            defaultRoyaltyConfiguration,
+            defaultAdmin,
+            setupActions
+        );
+    }
+
     // sets the merkle root for a POAP token
     function setMerkleRoot(uint256 tokenId, bytes32 merkleRoot) external onlyRole(DEFAULT_ADMIN_ROLE) {
         merkleRoots[tokenId] = merkleRoot;
