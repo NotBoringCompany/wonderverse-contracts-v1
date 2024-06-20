@@ -396,6 +396,25 @@
 			{
 				"inputs": [
 					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "getMerkleRoot",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "bytes32",
 						"name": "role",
 						"type": "bytes32"
@@ -601,6 +620,24 @@
 			{
 				"inputs": [
 					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "merkleRoot",
+						"type": "bytes32"
+					}
+				],
+				"name": "setMerkleRoot",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "bytes4",
 						"name": "interfaceId",
 						"type": "bytes4"
@@ -638,7 +675,7 @@
 			}
 		],
 		"devdoc": {
-			"details": "Proof of Attendence Protocol (POAP) for Wonderbits. Eligible participants who participate in POAP events are eligible to mint the tokens.",
+			"details": "Proof of Attendence Protocol (POAP) for Wonderbits.",
 			"errors": {
 				"AccessControlBadConfirmation()": [
 					{
@@ -911,11 +948,11 @@
 			]
 		},
 		"contracts/wonderbits/WonderbitsPOAP.sol": {
-			"keccak256": "0xf6831f1be584e267cb3aa65a9a5cb618173f75ee256a82f70f8889f3ce691cca",
+			"keccak256": "0xb22b7281b6acc77ad2d40db31b1b630fd55dd8a309e714f33e3a7ee1607fcfdc",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://0acd4d5862bed4f6c0d45bd19f6964b481d73c885f9f0c22954a0fd77fee4ea4",
-				"dweb:/ipfs/QmPKMmqyjrJX9qtT2AnR8rNQAtcDJUfg9GiQuMbkwBfU7t"
+				"bzz-raw://0ea74c411b4c020d70f447fe47c5b95cedfe2a62f5146a6ac8f6455af3cec7a7",
+				"dweb:/ipfs/QmZVFB7bdCNFib6vuehpyjv3sZRmGhSs6m5uzRD9YqZcz4"
 			]
 		}
 	},
