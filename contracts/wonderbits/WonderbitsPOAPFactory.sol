@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./zora/ZoraCreator1155FactoryImpl.sol";
 import "./zora/IZoraCreator1155.sol";
 import "./zora/ZoraCreatorMerkleMinterStrategy.sol";
@@ -11,7 +12,7 @@ import "./zora/ZoraCreatorMerkleMinterStrategy.sol";
 /**
  * @dev Proof of Attendence Protocol (POAP) factory contract for Wonderbits.
  */
-contract WonderbitsPOAPFactory is AccessControl {
+contract WonderbitsPOAPFactory is AccessControl, ReentrancyGuard {
     // the Wonderbits POAP collection address. if a new collection needs to be created, the new address gets directly updated here.
     address private _wonderbitsPOAP;
     // Zora Creator 1155 Factory contract address to direct contract creation-related functionality to
@@ -20,22 +21,11 @@ contract WonderbitsPOAPFactory is AccessControl {
 
     // invalid merkle proof upon verification error
     error InvalidMerkleProof();
+    // throws when a transaction's value is less than the required fee to mint a POAP token
+    error InvalidFeeSent();
 
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
-    }
-
-    // reverts if the merkle proof is invalid
-    modifier isValidMerkleProof(
-        bytes32[] calldata proof,
-        bytes32 root,
-        bytes32 leaf
-    ) {
-        if (!_checkValidMerkleProof(proof, root, leaf)) {
-            revert InvalidMerkleProof();
-        }
-
-        _;
     }
 
     // creates a new POAP collection. this should only be called once.
@@ -93,31 +83,35 @@ contract WonderbitsPOAPFactory is AccessControl {
         );
     }
 
-    // function mintWithMerkleProof(
-    //     uint256 tokenId,
-    //     uint256 amount,
-    //     address to,
-    //     uint256 maxQuantity,
-    //     uint256 pricePerToken,
-    //     bytes32[] calldata proof
-    // ) 
-    // external 
-    // payable 
-    // isValidMerkleProof(
-    //     proof, 
-    //     _merkleMinter.allowedMerkles(_wonderbitsPOAP, tokenId).merkleRoot, 
-    //     keccak256(abi.encodePacked(to))
-    // ) 
-    // nonReentrant {
-    //     uint256 zoraMintFee = 
-    // }
+    // mints a POAP token using a merkle proof
+    function mintWithMerkleProof(
+        // [0] - tokenId, [1] - amount, [2] - maxQuantity, [3] - pricePerToken
+        uint256[4] calldata uints,
+        address to,
+        bytes32[] calldata proof
+    ) external payable nonReentrant {
+        ZoraCreatorMerkleMinterStrategy merkleMinter = ZoraCreatorMerkleMinterStrategy(address(_zoraCreatorFactory.merkleMinter()));
+        (,,,bytes32 merkleRoot) = merkleMinter.allowedMerkles(_wonderbitsPOAP, uints[0]);
 
-    // checks if a merkle proof is valid
-    function _checkValidMerkleProof(
-        bytes32[] calldata proof,
-        bytes32 root,
-        bytes32 leaf
-    ) private pure returns (bool) {
-        return MerkleProof.verify(proof, root, leaf);
+        if (!MerkleProof.verify(proof, merkleRoot, keccak256(abi.encodePacked(to)))) {
+            revert InvalidMerkleProof();
+        }
+
+        if (msg.value != checkFeeRequired(uints[3], uints[1])) {
+            revert InvalidFeeSent();
+        }
+
+        merkleMinter.requestMint(
+            _wonderbitsPOAP, 
+            uints[0], 
+            uints[1], 
+            msg.value, 
+            abi.encode(to, uints[2], uints[3], proof)
+        );
+    }
+
+    // check the fee required to mint a specific POAP token
+    function checkFeeRequired(uint256 pricePerToken, uint256 amount) public view returns (uint256) {
+        return (pricePerToken + IZoraCreator1155(_wonderbitsPOAP).mintFee()) * amount;
     }
 }
