@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./zora/ZoraCreator1155FactoryImpl.sol";
-import "./zora/IZoraCreator1155.sol";
-import "./zora/ZoraCreatorMerkleMinterStrategy.sol";
+
+
+
+
+
+
 
 /**
  * @dev Proof of Attendence Protocol (POAP) factory contract for Wonderbits.
@@ -110,13 +110,10 @@ contract WonderbitsPOAPFactory is AccessControl, ReentrancyGuard {
         );
     }
 
-    // returns the Wonderbits POAP Collection address
-    function getCollectionAddress() external view returns (address) {
-        return _wonderbitsPOAP;
-    }
-
     // check the fee required to mint a specific POAP token
     function checkFeeRequired(uint256 pricePerToken, uint256 amount) public view returns (uint256) {
         return (pricePerToken + IZoraCreator1155(_wonderbitsPOAP).mintFee()) * amount;
     }
 }
+
+
