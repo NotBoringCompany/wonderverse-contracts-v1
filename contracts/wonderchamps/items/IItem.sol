@@ -40,4 +40,8 @@ interface IItem {
 
     function getOwnedItem(uint256 id) external view returns (OwnedItem memory);
     function addItemToInventory(address player, OwnedItem calldata item) external;
+    function deleteItemFromInventory(address player, uint256 id) external;
+    function updateOwnedItemNumData(address player, uint256 id, uint256 numData) external;
+    function updateOwnedItemDetails(address player, uint256 id, bytes32[] calldata details) external;
+    function updateOwnedItemAdditionalData(address player, uint256 id, bytes calldata data) external;
 }
