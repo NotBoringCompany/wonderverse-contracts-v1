@@ -28,4 +28,7 @@ interface IItem {
         WHEEL,
         GADGET
     }
+
+    function getOwnedItem(uint256 id) external view returns (OwnedItem memory);
+    function addItemToInventory(address player, OwnedItem calldata item) external;
 }

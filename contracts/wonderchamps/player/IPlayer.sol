@@ -2,7 +2,10 @@
 
 pragma solidity ^0.8.26;
 
-contract Account {
+import "../inventory/IInventory.sol";
+
+// Interface for a player's data.
+interface IPlayer is IInventory {
     // represents a player's data instance.
     struct Player {
         // the user's address
@@ -15,4 +18,7 @@ contract Account {
         // the user's inventory
         Inventory inventory;
     }
+
+    function getPlayer(address player) external view returns (Player memory);
+    function addPlayer(Player calldata player) external;
 }

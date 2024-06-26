@@ -13,4 +13,6 @@ interface IInventory is IItem, IItemFragment {
         // the user's owned item fragments
         ItemFragment[] itemFragments;
     }
+
+    function getInventory(address player) external view returns (Inventory memory);
 }

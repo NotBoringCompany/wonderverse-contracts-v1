@@ -11,4 +11,7 @@ interface IItemFragment {
         // the amount of this fragment owned by the player
         uint256 amount;
     }
+
+    function getItemFragment(uint256 id) external view returns (ItemFragment memory);
+    function addItemFragmentToInventory(address player, ItemFragment calldata fragment) external;
 }
