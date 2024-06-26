@@ -3,9 +3,10 @@
 pragma solidity ^0.8.26;
 
 import "../inventory/IInventory.sol";
+import "../stats/IInGameStats.sol";
 
 // Interface for a player's data.
-interface IPlayer is IInventory {
+interface IPlayer is IInventory, IInGameStats {
     // represents a player's data instance.
     struct Player {
         // the user's address
@@ -17,6 +18,8 @@ interface IPlayer is IInventory {
         uint256 ownedIGC;
         // the user's inventory
         Inventory inventory;
+        // the user's in-game stats
+        InGameStats inGameStats;
     }
 
     function getPlayer(address player) external view returns (Player memory);
