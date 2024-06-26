@@ -23,7 +23,7 @@ interface IPlayer is IInventory, IInGameStats {
     }
 
     function getPlayer(address player) external view returns (Player memory);
-    function createPlayer(address player, bytes calldata adminSig) external;
-    function deletePlayer(address player, bytes[2] calldata sigs) external;
-    function createPlayerHash(address player, bytes32 salt, uint256 timestamp) external pure returns (bytes32);
+    function createPlayer(address player, bytes32 salt, uint256 timestamp, bytes calldata adminSig) external;
+    function deletePlayer(address player, bytes32 salt, uint256 timestamp, bytes[2] calldata sigs) external;
+    function playerDataHash(address player, bytes32 salt, uint256 timestamp) external pure returns (bytes32);
 }

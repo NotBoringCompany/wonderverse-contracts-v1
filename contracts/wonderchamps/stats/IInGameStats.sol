@@ -17,6 +17,4 @@ interface IInGameStats is ILeagueData {
         // the user's seasonal league data.
         LeagueData[] leagueData;
     }
-
-    function getInGameStats(address player) external view returns (InGameStats memory);
 }
