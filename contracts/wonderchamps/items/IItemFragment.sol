@@ -6,8 +6,8 @@ pragma solidity ^0.8.26;
 interface IItemFragment {
     // represents an item fragment owned by a player.
     struct ItemFragment {
-        // the fragment's name
-        bytes32 name;
+        // the fragment's name and description
+        bytes32[] details;
         // the amount of this fragment owned by the player
         uint256 amount;
     }
