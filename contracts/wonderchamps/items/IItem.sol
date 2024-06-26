@@ -13,12 +13,21 @@ interface IItem {
         // BIT POSITIONS:
         // [0 - 127] - the item's ID (128 bits)
         // [128 - 143] - the item's level (16 bits)
-        // [144 - 255] - extra data for the item (112 bits) [e.g. fragments used to level up the item]
+        // [144 - 159] - fragments used to upgrade the item (16 bits)
+        // [160 - 255] - additional numerical data (96 bits)
+        //
+        // NOTE: for vehicles: 
+        // [160 - 176] is stored for the base speed
+        // [177 - 191] is stored for the speed limit
         uint256 numData;
         // the item's name and description
         // [0] - the item's name
         // [1] - the item's description
         bytes32[] details;
+        // any additional data for the item (e.g. buffs, etc.)
+        // each additional data should be grouped into a specific "category" per index.
+        // for instance, [0] can be occupied for buffs, [1] can be occupied for debuffs, etc.
+        bytes[] additionalData;
     }
 
     // represents an item type.
