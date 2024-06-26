@@ -9,7 +9,7 @@ import "./player/Player.sol";
 import "./stats/IInGameStats.sol";
 import "./stats/ILeagueData.sol";
 
-contract Wonderchamps is IInventory, Item, Player {
+contract Wonderchamps is Item, Player {
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }

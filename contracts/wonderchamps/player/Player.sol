@@ -4,13 +4,15 @@ pragma solidity ^0.8.26;
 
 import "./IPlayer.sol";
 import "./IPlayerErrors.sol";
+import "../items/Item.sol";
+
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../utils/EventSignatures.sol";
 
 // Contract for player-related operations.
-abstract contract Player is IPlayer, IPlayerErrors, AccessControl, EventSignatures {
+abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSignatures {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
@@ -23,12 +25,47 @@ abstract contract Player is IPlayer, IPlayerErrors, AccessControl, EventSignatur
         _;
     }
 
+    // modifier that checks if an item to be added to the player's inventory is not already owned by the player.
+    modifier onlyUnownedItem(address player, uint256 itemId) {
+        _checkItemOwned(player, itemId);
+        _;
+    }
+
     /**
      * @dev Gets a player's data.
      */
     function getPlayer(address player) onlyPlayerOrAdmin(player) external view override returns (Player memory) {
         return players[player];
     }
+
+    /**
+     * @dev Adds an item to a player's inventory.
+     *
+     * If an item is already owned by the player, an error is thrown to prevent any unintentional overwriting.
+     *
+     * NOTE: Requires the admin's signature.
+     */
+    function addItemToInventory(
+        address player, 
+        OwnedItem calldata item, 
+        bytes32 salt,
+        uint256 timestamp,
+        bytes calldata adminSig
+    ) external onlyUnownedItem(player, _getItemID(item.numData)) {
+        // ensure that the signature is valid (i.e. the recovered address is the admin's address)
+        address recoveredAddress = ECDSA.recover(
+            MessageHashUtils.toEthSignedMessageHash(
+                itemDataHash(player, _getItemID(item.numData), salt, timestamp)
+            ),
+            adminSig
+        );
+
+        if (!hasRole(DEFAULT_ADMIN_ROLE, recoveredAddress)) {
+            revert InvalidAdminSignature();
+        }
+
+        /// TO DO!!!
+    } 
 
     /**
      * @dev Creates a new player instance.
@@ -54,18 +91,18 @@ abstract contract Player is IPlayer, IPlayerErrors, AccessControl, EventSignatur
         }
 
         // create the player instance.
-        players[player] = Player(
-            player, 
-            0,
-            Inventory(
-                new OwnedItem[](0), 
-                new ItemFragment[](0)
-            ),
-            InGameStats(
-                0,
-                new LeagueData[](0)
-            )
-        );
+        players[player] = Player({
+            addr: player,
+            ownedIGC: 0,
+            inventory: Inventory({ 
+                items: new OwnedItem[](0),
+                fragments: new OwnedItemFragment[](0)
+            }),
+            inGameStats: InGameStats({ 
+                drawingStats: 0,
+                leagueData: new LeagueData[](0)
+            })
+        });
 
         assembly {
             // emit the PlayerCreated event.
@@ -138,5 +175,12 @@ abstract contract Player is IPlayer, IPlayerErrors, AccessControl, EventSignatur
         if (_msgSender() != player && !hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert NotSelfOrAdmin();
         }
+    }
+
+    /**
+     * @dev Checks whether an item to be added to the player's inventory is already owned by the player.
+     */
+    function _checkItemOwned(address player, uint256 itemId) private view {
+        /// TO DO!!!
     }
 }
