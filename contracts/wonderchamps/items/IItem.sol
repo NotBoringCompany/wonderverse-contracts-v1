@@ -8,12 +8,12 @@ interface IItem {
     struct OwnedItem {
         // the item's type
         ItemType itemType;
-        // the skin's numerical data.
+        // the item's numerical data.
         //
         // BIT POSITIONS:
         // [0 - 127] - the item's ID (128 bits)
-        // [128 - 143] - the skin's level (16 bits)
-        // [144 - 255] - extra data for the skin (112 bits) [e.g. fragments used to level up the item]
+        // [128 - 143] - the item's level (16 bits)
+        // [144 - 255] - extra data for the item (112 bits) [e.g. fragments used to level up the item]
         uint256 numData;
         // the item's name and description
         // [0] - the item's name
