@@ -32,6 +32,13 @@ contract Wonderchamps is IInventory, IPlayer, IPlayerErrors, EventSignatures, Ac
     }
 
     /**
+     * @dev Gets a player's data.
+     */
+    function getPlayer(address player) onlyPlayerOrAdmin(player) external view override returns (Player memory) {
+        return players[player];
+    }
+
+    /**
      * @dev Creates a new player instance.
      *
      * Requires the admin's signature.
@@ -45,7 +52,7 @@ contract Wonderchamps is IInventory, IPlayer, IPlayerErrors, EventSignatures, Ac
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
         address recoveredAddress = ECDSA.recover(
             MessageHashUtils.toEthSignedMessageHash(
-                createPlayerHash(player, salt, timestamp)
+                playerDataHash(player, salt, timestamp)
             ),
             adminSig
         );
@@ -80,9 +87,53 @@ contract Wonderchamps is IInventory, IPlayer, IPlayerErrors, EventSignatures, Ac
     }
 
     /**
-     * @dev Gets the hash of a player creation request.
+     * @dev Deletes a player's data.
+     *
+     * NOTE: Requires both the admin and the player's signatures to ensure that the player is the one who wishes to delete their account.
+     *
+     * sigs[0] - the admin's signature
+     * sigs[1] - the player's signature
      */
-    function createPlayerHash(
+    function deletePlayer(address player, bytes32 salt, uint256 timestamp, bytes[2] calldata sigs) external {
+        address recoveredAdmin = ECDSA.recover(
+            MessageHashUtils.toEthSignedMessageHash(
+                playerDataHash(player, salt, timestamp)
+            ),
+            sigs[0]
+        );
+
+        address recoveredPlayer = ECDSA.recover(
+            MessageHashUtils.toEthSignedMessageHash(
+                playerDataHash(player, salt, timestamp)
+            ),
+            sigs[1]
+        );
+
+        if (!hasRole(DEFAULT_ADMIN_ROLE, recoveredAdmin)) {
+            revert InvalidAdminSignature();
+        }
+
+        if (recoveredPlayer != player) {
+            revert InvalidPlayerSignature();
+        }
+
+        delete players[player];
+
+        // emit the PlayerDeleted event.
+        assembly {
+            log2(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _PLAYER_DELETED_EVENT_SIGNATURE,
+                player
+            )
+        }
+    }
+
+    /**
+     * @dev Gets the hash of a player creation or deletion request.
+     */
+    function playerDataHash(
         address player,
         bytes32 salt,
         uint256 timestamp

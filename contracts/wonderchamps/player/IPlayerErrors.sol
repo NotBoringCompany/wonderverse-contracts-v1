@@ -13,4 +13,9 @@ interface IPlayerErrors {
      * @dev Throws if the recovered address doesn't match the admin's address; i.e. the signature is invalid.
      */
     error InvalidAdminSignature();
+
+    /**
+     * @dev Throws if the recovered address doesn't match the player's address; i.e. the signature is invalid.
+     */
+    error InvalidPlayerSignature();
 }
