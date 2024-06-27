@@ -149,7 +149,7 @@ contract Wonderchamps is Player {
     function updateOwnedItemAdditionalData(
         address player, 
         uint256 itemId,
-        bytes[] calldata _additionalData,
+        bytes[] memory _additionalData,
         // [0] - salt
         // [1] - adminSig
         bytes[] calldata sigData
