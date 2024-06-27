@@ -24,10 +24,10 @@ interface IItemFragment {
         uint256 timestamp,
         bytes calldata adminSig
     ) external;
-    function updateItemFragmentQuantity(
+    function updateItemFragmentNumData(
         address player,
         // [0] - fragmentId
-        // [1] - quantity
+        // [1] - numData
         // [2] - timestamp
         uint256[3] calldata data,
         bytes32 salt,

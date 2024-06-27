@@ -213,14 +213,14 @@ contract Wonderchamps is Player, LeagueData {
     }
 
     /**
-     * @dev Updates an item fragment's quantity within a player's inventory.
+     * @dev Updates an item fragment's {numData} within a player's inventory.
      *
      * NOTE: Requires the admin's signature.
      */
-    function updateItemFragmentQuantity(
+    function updateItemFragmentNumData(
         address player,
         // [0] - fragmentId
-        // [1] - quantity
+        // [1] - numData
         // [2] - timestamp
         uint256[3] calldata data,
         bytes32 salt,
@@ -232,7 +232,7 @@ contract Wonderchamps is Player, LeagueData {
         _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, fragmentId, salt, data[2])), adminSig);
 
         // update the item fragment's quantity.
-        ownedItemFragments[player][fragmentId].numData = _getUpdatedItemFragmentNumData(ownedItemFragments[player][fragmentId].numData, data[1]);
+        ownedItemFragments[player][fragmentId].numData = data[1];
 
         // emit the ItemFragmentUpdated event.
         assembly {
