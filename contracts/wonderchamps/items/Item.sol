@@ -6,7 +6,7 @@ import "./IItem.sol";
 import "./IItemErrors.sol";
 
 // Item contract containing item-related operations.
-abstract contract Item is IItem, IItemErrors {
+abstract contract Item is IItem, IItemErrors { 
     // mask to extract the item ID from an item's {numData}.
     uint256 internal constant _ITEM_ID_MASK = (1 << 128) - 1;
 

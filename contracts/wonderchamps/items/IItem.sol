@@ -6,6 +6,8 @@ pragma solidity ^0.8.26;
 interface IItem {
     // represents an item owned by a player.
     struct OwnedItem {
+        // if the item is owned by the player.
+        bool owned;
         // the item's numerical data.
         //
         // BIT POSITIONS:

@@ -16,10 +16,28 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
-    /**
-     * @dev Mapping from an address to its Player instance.
-     */
-    mapping (address => Player) private players;
+    // maps from the player's address to a boolean value indicating whether they've created an account.
+    mapping (address => bool) internal hasAccount;
+    // maps from the player's address to the amount of IGC they own.
+    //
+    // BIT POSITIONS:
+    // [0 - 127] - gold (premium currency)
+    // [128 - 255] - marble (common currency)
+    mapping (address => uint256) internal ownedIGC;
+    // maps from the player's address to an item ID to the item instance.
+    // if {OwnedItem.owned} is true, then the player owns the item.
+    mapping (address => mapping (uint256 => OwnedItem)) internal ownedItems;
+    // maps from the player's address to an item fragment ID to the item fragment instance.
+    // if {OwnedItemFragment.owned} is true, then the player owns the item fragment.
+    mapping (address => mapping (uint256 => OwnedItemFragment)) internal ownedItemFragments;
+    // maps from the player's address to their drawing stats.
+    //
+    // BIT POSITIONS:
+    // [0 - 127] - currentDrawPerMatchLevel (i.e. how many wheels can be drawn per match)
+    // [128 - 255] - currentDrawLengthLevel (i.e. how long a wheel can be drawn)
+    mapping (address => uint256) internal drawingStats;
+    // maps from the player's address to the league season to their league data within that season.
+    mapping (address => mapping (uint256 => LeagueData)) internal leagueData;
 
     /**
      * @dev Modifier that checks if the caller is the player itself or an admin (i.e. has the DEFAULT_ADMIN_ROLE).
@@ -37,61 +55,60 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         _;
     }
 
-    // modifier that checks if an item to be added to the player's inventory is not already owned by the player.
-    modifier onlyUnownedItem(address player, uint256 itemId) {
-        _checkItemOwned(player, itemId);
-        _;
-    }
-
     /**
      * @dev Gets a player's data.
-     */
-    function getPlayer(address player) onlyPlayerOrAdmin(player) external view override returns (Player memory) {
-        return players[player];
-    }
-
-    /**
-     * @dev Adds an item to a player's inventory.
      *
-     * If an item is already owned by the player, an error is thrown to prevent any unintentional overwriting.
-     *
-     * NOTE: Requires the admin's signature.
+     * NOTE: Because mappings can't iterate over all elements, the function takes in the IDs of the 
+     * items, fragments, and league seasons that the player owns and played in respectively.
      */
-    function addItemToInventory(
-        address player, 
-        OwnedItem calldata item, 
-        bytes32 salt,
-        uint256 timestamp,
-        bytes calldata adminSig
-    ) external onlyUnownedItem(player, _getItemID(item.numData)) {
-        uint256 itemId = _getItemID(item.numData);
+    function getPlayer(
+        address player,
+        uint256[] calldata itemIDs,
+        uint256[] calldata fragmentIDs,
+        uint256[] calldata leagueSeasons
+    ) onlyPlayerOrAdmin(player) external view returns (
+        uint256 _ownedIGC,
+        OwnedItem[] memory items,
+        OwnedItemFragment[] memory fragments,
+        uint256 _drawingStats,
+        LeagueData[] memory _leagueData
+    ) {
+        items = new OwnedItem[](itemIDs.length);
+        fragments = new OwnedItemFragment[](fragmentIDs.length);
+        _leagueData = new LeagueData[](leagueSeasons.length);
 
-        // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        address recoveredAddress = ECDSA.recover(
-            MessageHashUtils.toEthSignedMessageHash(
-                itemDataHash(player, itemId, salt, timestamp)
-            ),
-            adminSig
+        for (uint256 i = 0; i < itemIDs.length;) {
+            items[i] = ownedItems[player][itemIDs[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint256 i = 0; i < fragmentIDs.length;) {
+            fragments[i] = ownedItemFragments[player][fragmentIDs[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint256 i = 0; i < leagueSeasons.length;) {
+            _leagueData[i] = leagueData[player][leagueSeasons[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        return (
+            ownedIGC[player],
+            items,
+            fragments,
+            drawingStats[player],
+            _leagueData
         );
-
-        if (!hasRole(DEFAULT_ADMIN_ROLE, recoveredAddress)) {
-            revert InvalidAdminSignature();
-        }
-
-        // add the item to the player's inventory.
-        players[player].inventory.items.push(item);
-
-        // emit the ItemAdded event.
-        assembly {
-            log3(
-                0, // 0 offset because no additional data is appended
-                0, // 0 size because no additional data is appended
-                _ITEM_ADDED_EVENT_SIGNATURE,
-                player,
-                itemId
-            )
-        }
-    } 
+    }
 
     /**
      * @dev Creates a new player instance.
@@ -116,19 +133,12 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
             revert InvalidAdminSignature();
         }
 
-        // create the player instance.
-        players[player] = Player({
-            addr: player,
-            ownedIGC: 0,
-            inventory: Inventory({ 
-                items: new OwnedItem[](0),
-                fragments: new OwnedItemFragment[](0)
-            }),
-            inGameStats: InGameStats({ 
-                drawingStats: 0,
-                leagueData: new LeagueData[](0)
-            })
-        });
+        // create the player instance by setting the player's {hasAccount} mapping to true.
+        // NOTE: 
+        // {ownedIGC} does NOT need to be set to 0 because it's already set to 0 by default.
+        // {ownedItems}, {ownedItemFragments} and {leagueData} do NOT need to be set to empty mappings because they're already empty by default.
+        // {drawingStats} does NOT need to be set to 0 because it's already set to 0 by default.
+        hasAccount[player] = true;
 
         assembly {
             // emit the PlayerCreated event.
@@ -144,12 +154,22 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
     /**
      * @dev Deletes a player's data.
      *
+     * NOTE: Requires the ownedItemIDs, ownedItemFragmentIDs and leagueSeasons to be manually inputted, which will all be deleted.
+     *
      * NOTE: Requires both the admin and the player's signatures to ensure that the player is the one who wishes to delete their account.
      *
      * sigs[0] - the admin's signature
      * sigs[1] - the player's signature
      */
-    function deletePlayer(address player, bytes32 salt, uint256 timestamp, bytes[2] calldata sigs) external {
+    function deletePlayer(
+        address player, 
+        uint256[] calldata ownedItemIDs,
+        uint256[] calldata ownedItemFragmentIDs,
+        uint256[] calldata leagueSeasons,
+        bytes32 salt, 
+        uint256 timestamp,
+        bytes[2] calldata sigs
+    ) external {
         address recoveredAdmin = ECDSA.recover(
             MessageHashUtils.toEthSignedMessageHash(
                 playerDataHash(player, salt, timestamp)
@@ -172,7 +192,34 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
             revert InvalidPlayerSignature();
         }
 
-        delete players[player];
+        // delete the player instance.
+        hasAccount[player] = false;
+        ownedIGC[player] = 0;
+        drawingStats[player] = 0;
+
+        for (uint256 i = 0; i < ownedItemIDs.length;) {
+            delete ownedItems[player][ownedItemIDs[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint256 i = 0; i < ownedItemFragmentIDs.length;) {
+            delete ownedItemFragments[player][ownedItemFragmentIDs[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint256 i = 0; i < leagueSeasons.length;) {
+            delete leagueData[player][leagueSeasons[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
 
         // emit the PlayerDeleted event.
         assembly {
@@ -189,7 +236,7 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
      * @dev Checks whether a player exists.
      */
     function playerExists(address player) public view override returns (bool) {
-        return players[player].addr != address(0);
+        return hasAccount[player];
     }
 
     /**
@@ -218,23 +265,6 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
     function _checkPlayerExists(address player) private view {
         if (!playerExists(player)) {
             revert PlayerAlreadyExists();
-        }
-    }
-
-    /**
-     * @dev Checks whether an item to be added to the player's inventory is already owned by the player.
-     */
-    function _checkItemOwned(address player, uint256 itemId) private view {
-        // to check if the item to be added already exists in the player's inventory, we need to iterate over the player's items.
-        // if the item is found, an error is thrown to prevent any unintentional overwriting.
-        for (uint256 i = 0; i < players[player].inventory.items.length;) {
-            if (_getItemID(players[player].inventory.items[i].numData) == itemId) {
-                revert ItemAlreadyOwned(itemId);
-            }
-
-            unchecked {
-                ++i;
-            }
         }
     }
 }
