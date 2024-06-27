@@ -14,12 +14,27 @@ abstract contract Item is IItem, IItemErrors, IItemFragmentErrors {
      * NOTE: Both items and item fragments store the ID in the lower 128 bits of the {numData}, so a singular mask can be used.
      */
     uint256 internal constant _ITEM_ID_MASK = (1 << 128) - 1;
+    /**
+     * @dev Mask to isolate the 32 bits representing the quantity of an item fragment from an item fragment's {numData}.
+     */
+    uint256 internal constant _ITEM_FRAGMENT_QUANTITY_MASK = ((1 << 32) - 1) << 128;
+    /**
+     * @dev Bit shift to shift the {quantity} of an item fragment to the correct bit position in an item fragment's {numData}.
+     */
+    uint256 internal constant _ITEM_FRAGMENT_QUANTITY_SHIFT = 128;
 
     /**
      * @dev Gets the item ID from an item's {numData} or an item fragment's ID from an item fragment's {numData}.
      */
     function _getItemID(uint256 numData) internal pure returns (uint256) {
         return numData & _ITEM_ID_MASK;
+    }
+
+    /**
+     * @dev Gets the new {numData} for an item fragment with the updated quantity.
+     */
+    function _getUpdatedItemFragmentNumData(uint256 numData, uint256 quantity) internal pure returns (uint256) {
+        return (numData & ~_ITEM_FRAGMENT_QUANTITY_MASK) | ((quantity << _ITEM_FRAGMENT_QUANTITY_SHIFT) & _ITEM_FRAGMENT_QUANTITY_MASK);
     }
 
     /**

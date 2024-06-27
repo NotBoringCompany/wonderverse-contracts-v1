@@ -206,6 +206,75 @@ contract Wonderchamps is Player {
         }
     }
 
+    /**
+     * @dev Updates an item fragment's quantity within a player's inventory.
+     *
+     * NOTE: Requires the admin's signature.
+     */
+    function updateItemFragmentQuantity(
+        address player,
+        // [0] - fragmentId
+        // [1] - quantity
+        // [2] - timestamp
+        uint256[3] calldata data,
+        bytes32 salt,
+        bytes calldata adminSig
+    ) external onlyOwnedItemFragment(player, data[0]) {
+        uint256 fragmentId = data[0];
+
+        // ensure that the signature is valid (i.e. the recovered address is the admin's address)
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, fragmentId, salt, data[2])), adminSig);
+
+        // update the item fragment's quantity.
+        ownedItemFragments[player][fragmentId].numData = _getUpdatedItemFragmentNumData(ownedItemFragments[player][fragmentId].numData, data[1]);
+
+        // emit the ItemFragmentUpdated event.
+        assembly {
+            log3(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _ITEM_FRAGMENT_UPDATED_EVENT_SIGNATURE,
+                player,
+                fragmentId
+            )
+        }
+    }
+
+    /**
+     * @dev Removes an item fragment from a player's inventory.
+     *
+     * NOTE: Requires both the admin and the player's signatures.
+     */
+    function removeItemFragmentFromInventory(
+        address player,
+        // [0] - fragmentId
+        // [1] - timestamp
+        uint256[2] calldata data,
+        bytes32 salt,
+        // [0] - adminSig
+        // [1] - playerSig
+        bytes[2] calldata sigs
+    ) external onlyOwnedItemFragment(player, data[0]) {
+        uint256 fragmentId = data[0];
+
+        // check if both the admin and the player's signatures are valid.
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, fragmentId, salt, data[1])), sigs[0]);
+        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, fragmentId, salt, data[1])), sigs[1], player);
+
+        // remove the item fragment from the player's inventory.
+        delete ownedItemFragments[player][fragmentId];
+
+        // emit the ItemFragmentRemoved event.
+        assembly {
+            log3(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _ITEM_FRAGMENT_REMOVED_EVENT_SIGNATURE,
+                player,
+                fragmentId
+            )
+        }
+    }
 
     /**
      * @dev Checks whether an item to be added to the player's inventory is already owned by the player.
