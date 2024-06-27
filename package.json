@@ -18,6 +18,7 @@
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "@poanet/solidity-flattener": "^3.0.9",
     "@zoralabs/openzeppelin-contracts-upgradeable": "^4.8.4",
+    "dotenv": "^16.4.5",
     "solmate": "^6.2.0"
   }
 }

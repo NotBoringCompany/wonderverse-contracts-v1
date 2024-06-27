@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.26;
+pragma solidity ^0.8.24;
 
 import "./IPlayer.sol";
 import "./IPlayerErrors.sol";
@@ -170,13 +170,13 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
      * Requires the admin's signature.
      */
     function createPlayer(
-        address player,
-        bytes32 salt,
-        uint256 timestamp,
-        bytes calldata adminSig
+        address player, 
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
     ) external onlyNewPlayer(player) {
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(playerDataHash(player, salt, timestamp)), adminSig);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
 
         // create the player instance by setting the player's {hasAccount} mapping to true.
         // NOTE: 
@@ -208,13 +208,14 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         uint256[] calldata ownedItemIDs,
         uint256[] calldata ownedItemFragmentIDs,
         uint256[] calldata leagueSeasons,
-        bytes32 salt, 
-        uint256 timestamp,
-        bytes[2] calldata sigs
+        // [0] - salt
+        // [1] - adminSig
+        // [2] - playerSig
+        bytes[3] calldata sigData
     ) external {
         // check if both the admin and the player's signatures are valid.
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(playerDataHash(player, salt, timestamp)), sigs[0]);
-        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(playerDataHash(player, salt, timestamp)), sigs[1], player);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[2], player);
 
         // delete the player instance.
         hasAccount[player] = false;
@@ -261,17 +262,6 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
      */
     function playerExists(address player) public view override returns (bool) {
         return hasAccount[player];
-    }
-
-    /**
-     * @dev Gets the hash of a player creation or deletion request.
-     */
-    function playerDataHash(
-        address player,
-        bytes32 salt,
-        uint256 timestamp
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(player, salt, timestamp));
     }
 
     /**
