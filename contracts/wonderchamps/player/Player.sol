@@ -65,16 +65,10 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         uint256[] calldata itemIDs,
         uint256[] calldata fragmentIDs,
         uint256[] calldata leagueSeasons
-    ) onlyPlayerOrAdmin(player) external view returns (
-        uint256 _ownedIGC,
-        OwnedItem[] memory items,
-        OwnedItemFragment[] memory fragments,
-        uint256 _drawingStats,
-        LeagueData[] memory _leagueData
-    ) {
-        items = new OwnedItem[](itemIDs.length);
-        fragments = new OwnedItemFragment[](fragmentIDs.length);
-        _leagueData = new LeagueData[](leagueSeasons.length);
+    ) onlyPlayerOrAdmin(player) external view returns (Player memory) {
+        OwnedItem[] memory items = new OwnedItem[](itemIDs.length);
+        OwnedItemFragment[] memory fragments = new OwnedItemFragment[](fragmentIDs.length);
+        LeagueData[] memory _leagueData = new LeagueData[](leagueSeasons.length);
 
         for (uint256 i = 0; i < itemIDs.length;) {
             items[i] = ownedItems[player][itemIDs[i]];
@@ -100,7 +94,7 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
             }
         }
 
-        return (
+        return Player(
             ownedIGC[player],
             items,
             fragments,

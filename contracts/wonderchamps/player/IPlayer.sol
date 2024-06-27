@@ -11,18 +11,25 @@ import "../stats/ILeagueData.sol";
 
 // Interface for a player's data.
 interface IPlayer is IItem, IItemFragment, ILeagueData {
+    /**
+     * @dev Represents a player instance. Mainly used when retrieving player data.
+     *
+     * For specifics on what each field represents, please refer to the Player contract.
+     */
+    struct Player {
+        uint256 ownedIGC;
+        OwnedItem[] items;
+        OwnedItemFragment[] fragments;
+        uint256 drawingStats;
+        LeagueData[] leagueData;
+    }
+
     function getPlayer(
         address player,
         uint256[] calldata itemIDs,
         uint256[] calldata fragmentIDs,
         uint256[] calldata leagueSeasons
-    ) external view returns (
-        uint256 _ownedIGC,
-        OwnedItem[] memory items,
-        OwnedItemFragment[] memory fragments,
-        uint256 _drawingStats,
-        LeagueData[] memory _leagueData
-    );
+    ) external view returns (Player memory);
     function getOwnedIGC(address player) external view returns (uint256);
     function playerExists(address player) external view returns (bool);
     function createPlayer(address player, bytes32 salt, uint256 timestamp, bytes calldata adminSig) external;
