@@ -35,9 +35,10 @@ interface IItem {
     ) external;
     function removeItemFromInventory(
         address player, 
-        uint256 itemId, 
+        // [0] - itemId
+        // [1] - timestamp
+        uint256[2] calldata data,
         bytes32 salt, 
-        uint256 timestamp, 
         bytes[2] calldata sigs
     ) external;
     function updateOwnedItemNumData(
@@ -49,7 +50,14 @@ interface IItem {
         bytes32 salt,
         bytes calldata adminSig
     ) external;
-    function updateOwnedItemDetails(address player, uint256 itemId, bytes32[] calldata details) external;
-    function updateOwnedItemAdditionalData(address player, uint256 itemId, bytes calldata data) external;
+    function updateOwnedItemAdditionalData(
+        address player, 
+        // [0] - itemId
+        // [1] - timestamp
+        uint256[2] calldata data,
+        bytes32 salt,
+        bytes[] calldata _additionalData,
+        bytes calldata adminSig
+    ) external;
     function itemDataHash(address player, uint256 itemId, bytes32 salt, uint256 timestamp) external pure returns (bytes32);
 }

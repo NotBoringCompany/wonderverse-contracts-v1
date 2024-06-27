@@ -65,14 +65,19 @@ contract Wonderchamps is Player {
      */
     function removeItemFromInventory(
         address player, 
-        uint256 itemId,
+        // [0] - itemId
+        // [1] - timestamp
+        uint256[2] calldata data,
         bytes32 salt,
-        uint256 timestamp,
+        // [0] - adminSig
+        // [1] - playerSig
         bytes[2] calldata sigs
-    )  external onlyOwnedItem(player, itemId) {
+    )  external onlyOwnedItem(player, data[0]) {
+        uint256 itemId = data[0];
+
         // check if both the admin and the player's signatures are valid.
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, timestamp)), sigs[0]);
-        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, timestamp)), sigs[1], player);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, data[1])), sigs[0]);
+        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, data[1])), sigs[1], player);
 
         // remove the item from the player's inventory.
         delete ownedItems[player][itemId];
@@ -103,12 +108,60 @@ contract Wonderchamps is Player {
         bytes32 salt,
         bytes calldata adminSig
     ) external onlyOwnedItem(player, data[0]) {
+        uint256 itemId = data[0];
+
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, data[0], salt, data[2])), adminSig);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, data[2])), adminSig);
 
         // update the item's {numData}.
-        ownedItems[player][data[0]].numData = data[1];
+        ownedItems[player][itemId].numData = data[1];
+
+        // emit the ItemUpdated event.
+        assembly {
+            log3(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _ITEM_UPDATED_EVENT_SIGNATURE,
+                player,
+                itemId
+            )
+        }
     }
+
+    /**
+     * @dev Updates the {additionalData} of an owned item.
+     *
+     * NOTE: Requires the admin's signature.
+     */
+    function updateOwnedItemAdditionalData(
+        address player, 
+        // [0] - itemId
+        // [1] - timestamp
+        uint256[2] calldata data,
+        bytes32 salt,
+        bytes[] calldata _additionalData,
+        bytes calldata adminSig
+    ) external onlyOwnedItem(player, data[0]) {
+        uint256 itemId = data[0];
+
+        // ensure that the signature is valid (i.e. the recovered address is the admin's address)
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, data[1])), adminSig);
+
+        // update the item's {additionalData}.
+        ownedItems[player][itemId].additionalData = _additionalData;
+
+        // emit the ItemUpdated event.
+        assembly {
+            log3(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _ITEM_UPDATED_EVENT_SIGNATURE,
+                player,
+                itemId
+            )
+        }
+    }
+
 
     /**
      * @dev Checks whether an item to be added to the player's inventory is already owned by the player.
