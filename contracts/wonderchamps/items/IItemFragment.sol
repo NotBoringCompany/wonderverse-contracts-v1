@@ -17,6 +17,7 @@ interface IItemFragment {
         uint256 numData;
     }
 
+    function getItemFragments(address player, uint256[] calldata fragmentIds) external view returns (OwnedItemFragment[] memory);
     function addItemFragmentToInventory(
         address player, 
         OwnedItemFragment calldata fragment,

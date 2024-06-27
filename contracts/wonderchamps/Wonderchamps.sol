@@ -5,9 +5,8 @@ pragma solidity ^0.8.26;
 import "./items/Item.sol";
 import "./items/IItemFragment.sol";
 import "./player/Player.sol";
-import "./stats/LeagueData.sol";
 
-contract Wonderchamps is Player, LeagueData {
+contract Wonderchamps is Player {
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }

@@ -9,9 +9,10 @@ import "../utils/Signatures.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../utils/EventSignatures.sol";
+import "../stats/LeagueData.sol";
 
 // Contract for player-related operations.
-abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSignatures, Signatures {
+abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSignatures, Signatures, LeagueData {
     using MessageHashUtils for bytes32;
 
     // maps from the player's address to a boolean value indicating whether they've created an account.
@@ -106,6 +107,67 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
             drawingStats[player],
             _leagueData
         );
+    }
+
+    /**
+     * @dev Fetches the packed IGC value owned by a player.
+     *
+     * NOTE: The value returned here is NOT the actual IGC value. 
+     * {ownedIGC} consists of two currencies and should be unpacked manually off-chain.
+     */
+    function getOwnedIGC(address player) external view onlyPlayerOrAdmin(player) returns (uint256) {
+        return ownedIGC[player];
+    }
+
+    /**
+     * @dev Fetches one or multiple item data for a player given the item IDs.
+     */
+    function getItems(address player, uint256[] calldata itemIds) external view onlyPlayerOrAdmin(player) returns (OwnedItem[] memory) {
+        OwnedItem[] memory items = new OwnedItem[](itemIds.length);
+
+        for (uint256 i = 0; i < itemIds.length;) {
+            items[i] = ownedItems[player][itemIds[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        return items;
+    }
+
+    /**
+     * @dev Fetches one or multiple item fragment data for a player given the fragment IDs.
+     */
+    function getItemFragments(address player, uint256[] calldata fragmentIds) external view onlyPlayerOrAdmin(player) returns (OwnedItemFragment[] memory) {
+        OwnedItemFragment[] memory fragments = new OwnedItemFragment[](fragmentIds.length);
+
+        for (uint256 i = 0; i < fragmentIds.length;) {
+            fragments[i] = ownedItemFragments[player][fragmentIds[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        return fragments;
+    }
+
+    /**
+     * @dev Fetches one or multiple league data for a player given the league seasons.
+     */
+    function getLeagueData(address player, uint256[] calldata seasons) external view onlyPlayerOrAdmin(player) returns (LeagueData[] memory) {
+        LeagueData[] memory _leagueData = new LeagueData[](seasons.length);
+
+        for (uint256 i = 0; i < seasons.length;) {
+            _leagueData[i] = leagueData[player][seasons[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        return _leagueData;
     }
 
     /**

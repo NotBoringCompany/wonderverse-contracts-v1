@@ -15,7 +15,8 @@ interface ILeagueData {
         // each battle is encoded and concatenated into a `bytes` instance.
         bytes battleHistory;
     }
-
+    
+    function getLeagueData(address player, uint256[] calldata seasons) external view returns (LeagueData[] memory);
     function addLeagueData(
         address player, 
         LeagueData calldata data,

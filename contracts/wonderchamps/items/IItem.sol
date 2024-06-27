@@ -25,7 +25,8 @@ interface IItem {
         // for instance, [0] can be occupied for buffs, [1] can be occupied for debuffs, etc.
         bytes[] additionalData;
     }
-    
+
+    function getItems(address player, uint256[] calldata itemIds) external view returns (OwnedItem[] memory);
     function addItemToInventory(
         address player, 
         OwnedItem calldata item,
