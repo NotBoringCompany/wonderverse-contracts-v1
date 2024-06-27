@@ -5,15 +5,13 @@ pragma solidity ^0.8.26;
 import "./IPlayer.sol";
 import "./IPlayerErrors.sol";
 import "../items/Item.sol";
-
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "../utils/Signatures.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "../utils/EventSignatures.sol";
 
 // Contract for player-related operations.
-abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSignatures {
-    using ECDSA for bytes32;
+abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSignatures, Signatures {
     using MessageHashUtils for bytes32;
 
     // maps from the player's address to a boolean value indicating whether they've created an account.
@@ -122,16 +120,7 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         bytes calldata adminSig
     ) external onlyNewPlayer(player) {
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        address recoveredAddress = ECDSA.recover(
-            MessageHashUtils.toEthSignedMessageHash(
-                playerDataHash(player, salt, timestamp)
-            ),
-            adminSig
-        );
-
-        if (!hasRole(DEFAULT_ADMIN_ROLE, recoveredAddress)) {
-            revert InvalidAdminSignature();
-        }
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(playerDataHash(player, salt, timestamp)), adminSig);
 
         // create the player instance by setting the player's {hasAccount} mapping to true.
         // NOTE: 
@@ -170,27 +159,9 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         uint256 timestamp,
         bytes[2] calldata sigs
     ) external {
-        address recoveredAdmin = ECDSA.recover(
-            MessageHashUtils.toEthSignedMessageHash(
-                playerDataHash(player, salt, timestamp)
-            ),
-            sigs[0]
-        );
-
-        address recoveredPlayer = ECDSA.recover(
-            MessageHashUtils.toEthSignedMessageHash(
-                playerDataHash(player, salt, timestamp)
-            ),
-            sigs[1]
-        );
-
-        if (!hasRole(DEFAULT_ADMIN_ROLE, recoveredAdmin)) {
-            revert InvalidAdminSignature();
-        }
-
-        if (recoveredPlayer != player) {
-            revert InvalidPlayerSignature();
-        }
+        // check if both the admin and the player's signatures are valid.
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(playerDataHash(player, salt, timestamp)), sigs[0]);
+        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(playerDataHash(player, salt, timestamp)), sigs[1], player);
 
         // delete the player instance.
         hasAccount[player] = false;

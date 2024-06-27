@@ -41,16 +41,7 @@ contract Wonderchamps is Player {
         uint256 itemId = _getItemID(item.numData);
 
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        address recoveredAddress = ECDSA.recover(
-            MessageHashUtils.toEthSignedMessageHash(
-                itemDataHash(player, itemId, salt, timestamp)
-            ),
-            adminSig
-        );
-
-        if (!hasRole(DEFAULT_ADMIN_ROLE, recoveredAddress)) {
-            revert InvalidAdminSignature();
-        }
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, timestamp)), adminSig);
 
         // add the item to the player's inventory.
         ownedItems[player][itemId] = item;
@@ -79,28 +70,9 @@ contract Wonderchamps is Player {
         uint256 timestamp,
         bytes[2] calldata sigs
     )  external onlyOwnedItem(player, itemId) {
-        // ensure that the signatures are valid (i.e. the recovered addresses are the admin's and the player's addresses)
-        address recoveredAdminAddress = ECDSA.recover(
-            MessageHashUtils.toEthSignedMessageHash(
-                itemDataHash(player, itemId, salt, timestamp)
-            ),
-            sigs[0]
-        );
-
-        address recoveredPlayerAddress = ECDSA.recover(
-            MessageHashUtils.toEthSignedMessageHash(
-                itemDataHash(player, itemId, salt, timestamp)
-            ),
-            sigs[1]
-        );
-
-        if (!hasRole(DEFAULT_ADMIN_ROLE, recoveredAdminAddress)) {
-            revert InvalidAdminSignature();
-        }
-
-        if (recoveredPlayerAddress != player) {
-            revert InvalidPlayerSignature();
-        }
+        // check if both the admin and the player's signatures are valid.
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, timestamp)), sigs[0]);
+        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, timestamp)), sigs[1], player);
 
         // remove the item from the player's inventory.
         delete ownedItems[player][itemId];
@@ -115,6 +87,27 @@ contract Wonderchamps is Player {
                 itemId
             )
         }
+    }
+
+    /**
+     * @dev Updates the {numData} of an owned item.
+     *
+     * NOTE: Requires the admin's signature.
+     */
+    function updateOwnedItemNumData(
+        address player, 
+        // [0] - itemId
+        // [1] - numData
+        // [2] - timestamp
+        uint256[3] calldata data,
+        bytes32 salt,
+        bytes calldata adminSig
+    ) external onlyOwnedItem(player, data[0]) {
+        // ensure that the signature is valid (i.e. the recovered address is the admin's address)
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, data[0], salt, data[2])), adminSig);
+
+        // update the item's {numData}.
+        ownedItems[player][data[0]].numData = data[1];
     }
 
     /**
