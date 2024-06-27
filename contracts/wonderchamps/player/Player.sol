@@ -16,12 +16,24 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
-    // a mapping from a player's address to their player data.
+    /**
+     * @dev Mapping from an address to its Player instance.
+     */
     mapping (address => Player) private players;
 
-    // modifier that checks if the caller is the player or an admin.
+    /**
+     * @dev Modifier that checks if the caller is the player itself or an admin (i.e. has the DEFAULT_ADMIN_ROLE).
+     */
     modifier onlyPlayerOrAdmin(address player) {
         _checkPlayerOrAdmin(player);
+        _;
+    }
+
+    /**
+     * @dev Modifier that checks if the player is new (i.e. doesn't exist in the players mapping).
+     */
+    modifier onlyNewPlayer(address player) {
+        _checkPlayerExists(player);
         _;
     }
 
@@ -52,10 +64,12 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         uint256 timestamp,
         bytes calldata adminSig
     ) external onlyUnownedItem(player, _getItemID(item.numData)) {
+        uint256 itemId = _getItemID(item.numData);
+
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
         address recoveredAddress = ECDSA.recover(
             MessageHashUtils.toEthSignedMessageHash(
-                itemDataHash(player, _getItemID(item.numData), salt, timestamp)
+                itemDataHash(player, itemId, salt, timestamp)
             ),
             adminSig
         );
@@ -64,7 +78,19 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
             revert InvalidAdminSignature();
         }
 
-        /// TO DO!!!
+        // add the item to the player's inventory.
+        players[player].inventory.items.push(item);
+
+        // emit the ItemAdded event.
+        assembly {
+            log3(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _ITEM_ADDED_EVENT_SIGNATURE,
+                player,
+                itemId
+            )
+        }
     } 
 
     /**
@@ -77,7 +103,7 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         bytes32 salt,
         uint256 timestamp,
         bytes calldata adminSig
-    ) external {
+    ) external onlyNewPlayer(player) {
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
         address recoveredAddress = ECDSA.recover(
             MessageHashUtils.toEthSignedMessageHash(
@@ -160,6 +186,13 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
     }
 
     /**
+     * @dev Checks whether a player exists.
+     */
+    function playerExists(address player) public view override returns (bool) {
+        return players[player].addr != address(0);
+    }
+
+    /**
      * @dev Gets the hash of a player creation or deletion request.
      */
     function playerDataHash(
@@ -170,7 +203,9 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         return keccak256(abi.encodePacked(player, salt, timestamp));
     }
 
-    // checks if the caller is `player` or an admin.
+    /**
+     * @dev Checks whether the caller is the player itself or an admin.
+     */
     function _checkPlayerOrAdmin(address player) private view {
         if (_msgSender() != player && !hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert NotSelfOrAdmin();
@@ -178,9 +213,28 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
     }
 
     /**
+     * @dev Checks whether a player exists.
+     */
+    function _checkPlayerExists(address player) private view {
+        if (!playerExists(player)) {
+            revert PlayerAlreadyExists();
+        }
+    }
+
+    /**
      * @dev Checks whether an item to be added to the player's inventory is already owned by the player.
      */
     function _checkItemOwned(address player, uint256 itemId) private view {
-        /// TO DO!!!
+        // to check if the item to be added already exists in the player's inventory, we need to iterate over the player's items.
+        // if the item is found, an error is thrown to prevent any unintentional overwriting.
+        for (uint256 i = 0; i < players[player].inventory.items.length;) {
+            if (_getItemID(players[player].inventory.items[i].numData) == itemId) {
+                revert ItemAlreadyOwned(itemId);
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 }

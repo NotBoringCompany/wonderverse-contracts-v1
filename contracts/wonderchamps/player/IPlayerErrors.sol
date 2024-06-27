@@ -18,4 +18,9 @@ interface IPlayerErrors {
      * @dev Throws if the recovered address doesn't match the player's address; i.e. the signature is invalid.
      */
     error InvalidPlayerSignature();
+
+    /**
+     * @dev Throws when trying to create a new player instance when the player data already exists.
+     */
+    error PlayerAlreadyExists();
 }
