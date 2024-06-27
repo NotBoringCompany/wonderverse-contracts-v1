@@ -24,6 +24,18 @@ contract Wonderchamps is Player {
         _;
     }
 
+    // modifier that checks if an item fragment to be added to the player's inventory is not already owned by the player.
+    modifier onlyUnownedItemFragment(address player, uint256 fragmentId) {
+        _checkItemFragmentOwned(player, fragmentId, true);
+        _;
+    }
+
+    // modifier that checks if an item fragment to be deleted from the player's inventory is owned by the player.
+    modifier onlyOwnedItemFragment(address player, uint256 fragmentId) {
+        _checkItemFragmentOwned(player, fragmentId, false);
+        _;
+    }
+
     /**
      * @dev Adds an item to a player's inventory.
      *
@@ -162,6 +174,38 @@ contract Wonderchamps is Player {
         }
     }
 
+    /**
+     * @dev Adds an item fragment to a player's inventory.
+     *
+     * NOTE: Requires the admin's signature.
+     */
+    function addItemFragmentToInventory(
+        address player, 
+        OwnedItemFragment calldata fragment,
+        bytes32 salt,
+        uint256 timestamp,
+        bytes calldata adminSig
+    ) external onlyUnownedItemFragment(player, _getItemID(fragment.numData)) {
+        uint256 fragmentId = _getItemID(fragment.numData);
+
+        // ensure that the signature is valid (i.e. the recovered address is the admin's address)
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, fragmentId, salt, timestamp)), adminSig);
+
+        // add the item fragment to the player's inventory.
+        ownedItemFragments[player][fragmentId] = fragment;
+
+        // emit the ItemFragmentAdded event.
+        assembly {
+            log3(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _ITEM_FRAGMENT_ADDED_EVENT_SIGNATURE,
+                player,
+                fragmentId
+            )
+        }
+    }
+
 
     /**
      * @dev Checks whether an item to be added to the player's inventory is already owned by the player.
@@ -180,6 +224,27 @@ contract Wonderchamps is Player {
         } else {
             if (!ownedItems[player][itemId].owned) {
                 revert ItemNotOwned(itemId);
+            }
+        }
+    }
+
+    /**
+     * @dev Checks whether an item fragment to be added to the player's inventory is already owned by the player.
+     *
+     * NOTE: This is a multi-purpose function that can be used to check if an item fragment is owned by the player or not.
+     *
+     * In the case this function is called for checking if an item fragment to be added is already owned, {add} should be true.
+     * If the case is to check if an item fragment to be deleted isn't owned, {add} should be false.
+     */
+    function _checkItemFragmentOwned(address player, uint256 fragmentId, bool add) private view {
+        // to check if an item fragment exists, we can simply check if the item fragment's {owned} field is set to true.
+        if (add) {
+            if (ownedItemFragments[player][fragmentId].owned) {
+                revert ItemFragmentAlreadyOwned(fragmentId);
+            }
+        } else {
+            if (!ownedItemFragments[player][fragmentId].owned) {
+                revert ItemFragmentNotOwned(fragmentId);
             }
         }
     }

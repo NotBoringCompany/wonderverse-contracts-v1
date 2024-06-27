@@ -6,12 +6,39 @@ pragma solidity ^0.8.26;
 interface IItemFragment {
     // represents an item fragment owned by a player.
     struct OwnedItemFragment {
-        // the item fragment's data
-        // [0] - the item fragment's ID
-        // [1] - the item fragment's quantity/amount owned by the player
-        uint256[2] data;
+        // if the item fragment is owned by the player.
+        bool owned;
+        // the item fragment's numerical data
+        //
+        // BIT POSITIONS:
+        // [0 - 127] - the item fragment's ID (128 bits)
+        // [128 - 159] - the amount of this item fragment owned by the player (32 bits)
+        // [160 - 255] - additional numerical data (96 bits)
+        uint256 numData;
     }
 
-    function getItemFragment(uint256 id) external view returns (OwnedItemFragment memory);
-    function addItemFragmentToInventory(address player, OwnedItemFragment calldata fragment) external;
+    function addItemFragmentToInventory(
+        address player, 
+        OwnedItemFragment calldata fragment,
+        bytes32 salt,
+        uint256 timestamp,
+        bytes calldata adminSig
+    ) external;
+    function updateItemFragmentQuantity(
+        address player,
+        // [0] - fragmentId
+        // [1] - quantity
+        // [2] - timestamp
+        uint256[3] calldata data,
+        bytes32 salt,
+        bytes calldata adminSig
+    ) external;
+    function removeItemFragmentFromInventory(
+        address player,
+        // [0] - fragmentId
+        // [1] - timestamp
+        uint256[2] calldata data,
+        bytes32 salt,
+        bytes[2] calldata sigs
+    ) external;
 }

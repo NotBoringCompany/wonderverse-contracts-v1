@@ -16,6 +16,5 @@ interface ILeagueData {
         bytes battleHistory;
     }
 
-    function getLeagueData(uint256 id) external view returns (LeagueData memory);
     function addLeagueData(address player, LeagueData calldata data) external;
 }

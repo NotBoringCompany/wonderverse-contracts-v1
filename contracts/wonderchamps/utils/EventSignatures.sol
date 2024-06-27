@@ -38,4 +38,25 @@ abstract contract EventSignatures {
      * This event signature is obtained by: `keccak256("ItemUpdated(address,uint256)")`.
      */
     bytes32 internal constant _ITEM_UPDATED_EVENT_SIGNATURE = 0xc36605e3afc7883a4162fc7d6ad90a5c08b78a73d0bd1bea0288b746046ecfef;
+
+    /**
+     * @dev Event signature for emitting an ItemFragmentAdded event upon adding an item fragment to the inventory.
+     *
+     * This event signature is obtained by `keccak256("ItemFragmentAdded(address,uint256,uint256)")`.
+     */
+    bytes32 internal constant _ITEM_FRAGMENT_ADDED_EVENT_SIGNATURE = 0x461d12aa98a20b4fabc02b04b95f8efbbdd00699d6826cd244814cd862fe08fb;
+
+    /**
+     * @dev Event signature for emitting an ItemFragmentRemoved event upon removing an item fragment from the inventory.
+     *
+     * This event signature is obtained by `keccak256("ItemFragmentRemoved(address,uint256,uint256)")`.
+     */
+    bytes32 internal constant _ITEM_FRAGMENT_REMOVED_EVENT_SIGNATURE = 0xab2ac95583fd8c7a6ed44777780607d32a472d5da94d68a60b2dc51db28dccd7;
+
+    /**
+     * @dev Event signature for emitting an ItemFragmentUpdated event upon updating an item fragment in the inventory.
+     *
+     * This event signature is obtained by `keccak256("ItemFragmentUpdated(address,uint256,uint256)")`.
+     */
+    bytes32 internal constant _ITEM_FRAGMENT_UPDATED_EVENT_SIGNATURE = 0x2d52772a1b0b9560e4b017c0f93dcb1257ab0c2ba6ff79c4bdc289137b8e0ff2;
 }
