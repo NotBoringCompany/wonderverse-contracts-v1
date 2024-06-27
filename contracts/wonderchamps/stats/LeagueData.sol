@@ -18,16 +18,4 @@ abstract contract LeagueData is ILeagueData, ILeagueDataErrors {
     function _getLeagueSeason(uint256 stats) internal pure returns (uint256) {
         return stats & _LEAGUE_DATA_SEASON_MASK;
     }
-
-    /**
-     * @dev Fetches the league data hash for adding league data for a season.
-     */
-    function leagueDataHash(
-        address player,
-        uint256 season,
-        bytes32 salt,
-        uint256 timestamp
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(player, season, salt, timestamp));
-    }
 }

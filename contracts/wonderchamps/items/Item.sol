@@ -21,11 +21,4 @@ abstract contract Item is IItem, IItemErrors, IItemFragmentErrors {
     function _getItemID(uint256 numData) internal pure returns (uint256) {
         return numData & _ITEM_ID_MASK;
     }
-
-    /**
-     * @dev Gets the hash of an item or item fragment addition or removal from a player's inventory.
-     */
-    function itemDataHash(address player, uint256 itemId, bytes32 salt, uint256 timestamp) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(player, itemId, salt, timestamp));
-    }
 }

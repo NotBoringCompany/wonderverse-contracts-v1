@@ -20,14 +20,8 @@ interface ILeagueData {
     function addLeagueData(
         address player, 
         LeagueData calldata data,
-        bytes32 salt,
-        uint256 timestamp,
-        bytes calldata adminSig
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
     ) external;
-    function leagueDataHash(
-        address player,
-        uint256 season,
-        bytes32 salt,
-        uint256 timestamp
-    ) external pure returns (bytes32);
 }

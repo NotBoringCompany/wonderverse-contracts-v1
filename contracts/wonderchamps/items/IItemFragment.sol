@@ -21,25 +21,25 @@ interface IItemFragment {
     function addItemFragmentToInventory(
         address player, 
         OwnedItemFragment calldata fragment,
-        bytes32 salt,
-        uint256 timestamp,
-        bytes calldata adminSig
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
     ) external;
     function updateItemFragmentNumData(
         address player,
         // [0] - fragmentId
         // [1] - numData
-        // [2] - timestamp
-        uint256[3] calldata data,
-        bytes32 salt,
-        bytes calldata adminSig
+        uint256[2] calldata data,
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
     ) external;
     function removeItemFragmentFromInventory(
         address player,
-        // [0] - fragmentId
-        // [1] - timestamp
-        uint256[2] calldata data,
-        bytes32 salt,
-        bytes[2] calldata sigs
+        uint256 fragmentId,
+        // [0] - salt
+        // [1] - adminSig
+        // [2] - playerSig
+        bytes[3] calldata sigData
     ) external;
 }

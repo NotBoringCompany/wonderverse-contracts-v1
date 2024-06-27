@@ -50,15 +50,15 @@ contract Wonderchamps is Player {
      */
     function addItemToInventory(
         address player, 
-        OwnedItem calldata item, 
-        bytes32 salt,
-        uint256 timestamp,
-        bytes calldata adminSig
+        OwnedItem calldata item,
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
     ) external onlyUnownedItem(player, _getItemID(item.numData)) {
         uint256 itemId = _getItemID(item.numData);
 
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, timestamp)), adminSig);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
 
         // add the item to the player's inventory.
         ownedItems[player][itemId] = item;
@@ -82,19 +82,15 @@ contract Wonderchamps is Player {
      */
     function removeItemFromInventory(
         address player, 
-        // [0] - itemId
-        // [1] - timestamp
-        uint256[2] calldata data,
-        bytes32 salt,
-        // [0] - adminSig
-        // [1] - playerSig
-        bytes[2] calldata sigs
-    )  external onlyOwnedItem(player, data[0]) {
-        uint256 itemId = data[0];
-
+        uint256 itemId,
+        // [0] - salt
+        // [1] - adminSig
+        // [2] - playerSig
+        bytes[3] calldata sigData
+    )  external onlyOwnedItem(player, itemId) {
         // check if both the admin and the player's signatures are valid.
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, data[1])), sigs[0]);
-        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, data[1])), sigs[1], player);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[2], player);
 
         // remove the item from the player's inventory.
         delete ownedItems[player][itemId];
@@ -117,18 +113,18 @@ contract Wonderchamps is Player {
      * NOTE: Requires the admin's signature.
      */
     function updateOwnedItemNumData(
-        address player, 
+        address player,
         // [0] - itemId
         // [1] - numData
-        // [2] - timestamp
-        uint256[3] calldata data,
-        bytes32 salt,
-        bytes calldata adminSig
+        uint256[2] calldata data, 
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
     ) external onlyOwnedItem(player, data[0]) {
         uint256 itemId = data[0];
 
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, data[2])), adminSig);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
 
         // update the item's {numData}.
         ownedItems[player][itemId].numData = data[1];
@@ -152,17 +148,14 @@ contract Wonderchamps is Player {
      */
     function updateOwnedItemAdditionalData(
         address player, 
-        // [0] - itemId
-        // [1] - timestamp
-        uint256[2] calldata data,
-        bytes32 salt,
+        uint256 itemId,
         bytes[] calldata _additionalData,
-        bytes calldata adminSig
-    ) external onlyOwnedItem(player, data[0]) {
-        uint256 itemId = data[0];
-
+        // [0] - salt
+        // [1] - adminSig
+        bytes[] calldata sigData
+    ) external onlyOwnedItem(player, itemId) {
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, itemId, salt, data[1])), adminSig);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
 
         // update the item's {additionalData}.
         ownedItems[player][itemId].additionalData = _additionalData;
@@ -187,14 +180,14 @@ contract Wonderchamps is Player {
     function addItemFragmentToInventory(
         address player, 
         OwnedItemFragment calldata fragment,
-        bytes32 salt,
-        uint256 timestamp,
-        bytes calldata adminSig
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
     ) external onlyUnownedItemFragment(player, _getItemID(fragment.numData)) {
         uint256 fragmentId = _getItemID(fragment.numData);
 
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, fragmentId, salt, timestamp)), adminSig);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
 
         // add the item fragment to the player's inventory.
         ownedItemFragments[player][fragmentId] = fragment;
@@ -220,15 +213,15 @@ contract Wonderchamps is Player {
         address player,
         // [0] - fragmentId
         // [1] - numData
-        // [2] - timestamp
-        uint256[3] calldata data,
-        bytes32 salt,
-        bytes calldata adminSig
+        uint256[2] calldata data,
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
     ) external onlyOwnedItemFragment(player, data[0]) {
         uint256 fragmentId = data[0];
 
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, fragmentId, salt, data[2])), adminSig);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
 
         // update the item fragment's quantity.
         ownedItemFragments[player][fragmentId].numData = data[1];
@@ -252,19 +245,15 @@ contract Wonderchamps is Player {
      */
     function removeItemFragmentFromInventory(
         address player,
-        // [0] - fragmentId
-        // [1] - timestamp
-        uint256[2] calldata data,
-        bytes32 salt,
-        // [0] - adminSig
-        // [1] - playerSig
-        bytes[2] calldata sigs
-    ) external onlyOwnedItemFragment(player, data[0]) {
-        uint256 fragmentId = data[0];
-
+        uint256 fragmentId,
+        // [0] - salt
+        // [1] - adminSig
+        // [2] - playerSig
+        bytes[3] calldata sigData
+    ) external onlyOwnedItemFragment(player, fragmentId) {
         // check if both the admin and the player's signatures are valid.
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, fragmentId, salt, data[1])), sigs[0]);
-        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(itemDataHash(player, fragmentId, salt, data[1])), sigs[1], player);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[2], player);
 
         // remove the item fragment from the player's inventory.
         delete ownedItemFragments[player][fragmentId];
@@ -289,14 +278,14 @@ contract Wonderchamps is Player {
     function addLeagueData(
         address player, 
         LeagueData calldata data,
-        bytes32 salt,
-        uint256 timestamp,
-        bytes calldata adminSig 
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
     ) external onlyNewLeagueData(player, _getLeagueSeason(data.stats)) {
         uint256 season = _getLeagueSeason(data.stats);
 
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(leagueDataHash(player, season, salt, timestamp)), adminSig);
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
 
         // add the league data to the player's stats.
         leagueData[player][season] = data;

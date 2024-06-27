@@ -13,10 +13,9 @@ import "../stats/ILeagueData.sol";
 interface IPlayer is IItem, IItemFragment, ILeagueData {
     function getPlayer(
         address player,
-        // [0][x] - ownedItemIDs
-        // [1][x] - ownedItemFragmentIDs
-        // [2][x] - leagueSeasons
-        uint256[][] calldata data
+        uint256[] calldata itemIDs,
+        uint256[] calldata fragmentIDs,
+        uint256[] calldata leagueSeasons
     ) external view returns (
         uint256 _ownedIGC,
         OwnedItem[] memory items,
@@ -29,13 +28,11 @@ interface IPlayer is IItem, IItemFragment, ILeagueData {
     function createPlayer(address player, bytes32 salt, uint256 timestamp, bytes calldata adminSig) external;
     function deletePlayer(
         address player, 
-        // [0][x] - ownedItemIDs
-        // [1][x] - ownedItemFragmentIDs
-        // [2][x] - leagueSeasons
-        uint256[][] calldata data,
+        uint256[] calldata ownedItemIDs,
+        uint256[] calldata ownedItemFragmentIDs,
+        uint256[] calldata leagueSeasons,
         bytes32 salt, 
         uint256 timestamp, 
         bytes[2] calldata sigs
     ) external;
-    function playerDataHash(address player, bytes32 salt, uint256 timestamp) external pure returns (bytes32);
 }

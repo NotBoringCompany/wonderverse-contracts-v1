@@ -62,10 +62,9 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
      */
     function getPlayer(
         address player,
-        // [0][x] - ownedItemIDs
-        // [1][x] - ownedItemFragmentIDs
-        // [2][x] - leagueSeasons
-        uint256[][] calldata data
+        uint256[] calldata itemIDs,
+        uint256[] calldata fragmentIDs,
+        uint256[] calldata leagueSeasons
     ) onlyPlayerOrAdmin(player) external view returns (
         uint256 _ownedIGC,
         OwnedItem[] memory items,
@@ -73,28 +72,28 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         uint256 _drawingStats,
         LeagueData[] memory _leagueData
     ) {
-        items = new OwnedItem[](data[0].length);
-        fragments = new OwnedItemFragment[](data[1].length);
-        _leagueData = new LeagueData[](data[2].length);
+        items = new OwnedItem[](itemIDs.length);
+        fragments = new OwnedItemFragment[](fragmentIDs.length);
+        _leagueData = new LeagueData[](leagueSeasons.length);
 
-        for (uint256 i = 0; i < data[0].length;) {
-            items[i] = ownedItems[player][data[0][i]];
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        for (uint256 i = 0; i < data[1].length;) {
-            fragments[i] = ownedItemFragments[player][data[1][i]];
+        for (uint256 i = 0; i < itemIDs.length;) {
+            items[i] = ownedItems[player][itemIDs[i]];
 
             unchecked {
                 ++i;
             }
         }
 
-        for (uint256 i = 0; i < data[2].length;) {
-            _leagueData[i] = leagueData[player][data[2][i]];
+        for (uint256 i = 0; i < fragmentIDs.length;) {
+            fragments[i] = ownedItemFragments[player][fragmentIDs[i]];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint256 i = 0; i < leagueSeasons.length;) {
+            _leagueData[i] = leagueData[player][leagueSeasons[i]];
 
             unchecked {
                 ++i;
@@ -208,18 +207,15 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
      *
      * NOTE: Requires the ownedItemIDs, ownedItemFragmentIDs and leagueSeasons to be manually inputted, which will all be deleted.
      *
-     * NOTE: Requires both the admin and the player's signatures to ensure that the player is the one who wishes to delete their account.
+     * NOTE: Requires both the admin and the player's signatures.
      */
     function deletePlayer(
         address player, 
-        // [0][x] - ownedItemIDs
-        // [1][x] - ownedItemFragmentIDs
-        // [2][x] - leagueSeasons
-        uint256[][] calldata data,
+        uint256[] calldata ownedItemIDs,
+        uint256[] calldata ownedItemFragmentIDs,
+        uint256[] calldata leagueSeasons,
         bytes32 salt, 
         uint256 timestamp,
-        // [0] - adminSig
-        // [1] - playerSig
         bytes[2] calldata sigs
     ) external {
         // check if both the admin and the player's signatures are valid.
@@ -231,24 +227,24 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         ownedIGC[player] = 0;
         drawingStats[player] = 0;
 
-        for (uint256 i = 0; i < data[0].length;) {
-            delete ownedItems[player][data[0][i]];
+        for (uint256 i = 0; i < ownedItemIDs.length;) {
+            delete ownedItems[player][ownedItemIDs[i]];
 
             unchecked {
                 ++i;
             }
         }
 
-        for (uint256 i = 0; i < data[1].length;) {
-            delete ownedItemFragments[player][data[1][i]];
+        for (uint256 i = 0; i < ownedItemFragmentIDs.length;) {
+            delete ownedItemFragments[player][ownedItemFragmentIDs[i]];
 
             unchecked {
                 ++i;
             }
         }
 
-        for (uint256 i = 0; i < data[2].length;) {
-            delete leagueData[player][data[2][i]];
+        for (uint256 i = 0; i < leagueSeasons.length;) {
+            delete leagueData[player][leagueSeasons[i]];
 
             unchecked {
                 ++i;
@@ -282,6 +278,13 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         uint256 timestamp
     ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(player, salt, timestamp));
+    }
+
+    /**
+     * @dev Fetches the data hash for any signature-related operation given a specific {salt}.
+     */
+    function dataHash(address player, bytes calldata salt) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(player, salt));
     }
 
     /**
