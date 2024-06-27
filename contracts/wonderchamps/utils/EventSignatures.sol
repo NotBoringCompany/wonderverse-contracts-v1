@@ -59,4 +59,11 @@ abstract contract EventSignatures {
      * This event signature is obtained by `keccak256("ItemFragmentUpdated(address,uint256,uint256)")`.
      */
     bytes32 internal constant _ITEM_FRAGMENT_UPDATED_EVENT_SIGNATURE = 0x2d52772a1b0b9560e4b017c0f93dcb1257ab0c2ba6ff79c4bdc289137b8e0ff2;
+
+    /**
+     * @dev Event signature for emitting a LeagueDataAdded event upon adding league data for a season.
+     *
+     * This event signature is obtained by `keccak256("LeagueDataAdded(address,uint256)")`.
+     */
+    bytes32 internal constant _LEAGUE_DATA_ADDED_EVENT_SIGNATURE = 0xe1a3b98a9976c6d2ea620746c483905be7679b691bd423620d828fc4c7128a3e;
 }

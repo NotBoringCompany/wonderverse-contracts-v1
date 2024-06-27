@@ -5,9 +5,9 @@ pragma solidity ^0.8.26;
 import "./items/Item.sol";
 import "./items/IItemFragment.sol";
 import "./player/Player.sol";
-import "./stats/ILeagueData.sol";
+import "./stats/LeagueData.sol";
 
-contract Wonderchamps is Player {
+contract Wonderchamps is Player, LeagueData {
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
@@ -33,6 +33,12 @@ contract Wonderchamps is Player {
     // modifier that checks if an item fragment to be deleted from the player's inventory is owned by the player.
     modifier onlyOwnedItemFragment(address player, uint256 fragmentId) {
         _checkItemFragmentOwned(player, fragmentId, false);
+        _;
+    }
+
+    // modifier that checks if the league data for a particular season for a user already exists.
+    modifier onlyNewLeagueData(address player, uint256 season) {
+        _checkLeagueDataExists(player, season);
         _;
     }
 
@@ -277,6 +283,38 @@ contract Wonderchamps is Player {
     }
 
     /**
+     * @dev Adds a new league data instance/entry after a season ends on the user's in-game stats.
+     *
+     * NOTE: Requires the admin's signature.
+     */
+    function addLeagueData(
+        address player, 
+        LeagueData calldata data,
+        bytes32 salt,
+        uint256 timestamp,
+        bytes calldata adminSig 
+    ) external onlyNewLeagueData(player, _getLeagueSeason(data.stats)) {
+        uint256 season = _getLeagueSeason(data.stats);
+
+        // ensure that the signature is valid (i.e. the recovered address is the admin's address)
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(leagueDataHash(player, season, salt, timestamp)), adminSig);
+
+        // add the league data to the player's stats.
+        leagueData[player][season] = data;
+
+        // emit the LeagueDataAdded event.
+        assembly {
+            log3(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _LEAGUE_DATA_ADDED_EVENT_SIGNATURE,
+                player,
+                season
+            )
+        }
+    }
+
+    /**
      * @dev Checks whether an item to be added to the player's inventory is already owned by the player.
      *
      * NOTE: This is a multi-purpose function that can be used to check if an item is owned by the player or not.
@@ -315,6 +353,15 @@ contract Wonderchamps is Player {
             if (!ownedItemFragments[player][fragmentId].owned) {
                 revert ItemFragmentNotOwned(fragmentId);
             }
+        }
+    }
+
+    /**
+     * @dev Checks if the league data for a particular season for a user already exists.
+     */
+    function _checkLeagueDataExists(address player, uint256 season) private view {
+        if (leagueData[player][season].stats != 0) {
+            revert LeagueDataAlreadyExists(season);
         }
     }
 }

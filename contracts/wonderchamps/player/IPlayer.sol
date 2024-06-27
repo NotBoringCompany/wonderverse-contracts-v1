@@ -11,7 +11,18 @@ import "../stats/ILeagueData.sol";
 
 // Interface for a player's data.
 interface IPlayer is IItem, IItemFragment, ILeagueData {
-    function getPlayer(address player) external view returns (uint256, OwnedItem[] memory, OwnedItemFragment[] memory, uint256, LeagueData[] memory);
+    function getPlayer(
+        address player,
+        uint256[] calldata itemIDs,
+        uint256[] calldata fragmentIDs,
+        uint256[] calldata leagueSeasons
+    ) external view returns (
+        uint256 _ownedIGC,
+        OwnedItem[] memory items,
+        OwnedItemFragment[] memory fragments,
+        uint256 _drawingStats,
+        LeagueData[] memory _leagueData
+    );
     function playerExists(address player) external view returns (bool);
     function createPlayer(address player, bytes32 salt, uint256 timestamp, bytes calldata adminSig) external;
     function deletePlayer(
