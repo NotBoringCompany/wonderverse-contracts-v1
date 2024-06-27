@@ -26,10 +26,22 @@ interface IItem {
         bytes[] additionalData;
     }
     
-    function addItemToInventory(address player, OwnedItem calldata item, bytes calldata adminSig) external;
-    function deleteItemFromInventory(address player, uint256 id) external;
-    function updateOwnedItemNumData(address player, uint256 id, uint256 numData) external;
-    function updateOwnedItemDetails(address player, uint256 id, bytes32[] calldata details) external;
-    function updateOwnedItemAdditionalData(address player, uint256 id, bytes calldata data) external;
+    function addItemToInventory(
+        address player, 
+        OwnedItem calldata item,
+        bytes32 salt,
+        uint256 timestamp, 
+        bytes calldata adminSig
+    ) external;
+    function removeItemFromInventory(
+        address player, 
+        uint256 itemId, 
+        bytes32 salt, 
+        uint256 timestamp, 
+        bytes[2] calldata sigs
+    ) external;
+    function updateOwnedItemNumData(address player, uint256 itemId, uint256 numData) external;
+    function updateOwnedItemDetails(address player, uint256 itemId, bytes32[] calldata details) external;
+    function updateOwnedItemAdditionalData(address player, uint256 itemId, bytes calldata data) external;
     function itemDataHash(address player, uint256 itemId, bytes32 salt, uint256 timestamp) external pure returns (bytes32);
 }

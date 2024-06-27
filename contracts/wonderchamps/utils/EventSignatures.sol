@@ -24,4 +24,11 @@ abstract contract EventSignatures {
      * This event signature is obtained by: `keccak256("ItemAdded(address,uint256)")`.
      */
     bytes32 internal constant _ITEM_ADDED_EVENT_SIGNATURE = 0x253f6b1995c330c2910a1fc84688341255a45574abc14d9c8deadaa3f45457a2;
+
+    /**
+     * @dev Event signature for emitting an ItemRemoved event upon removing an item from the inventory.
+     *
+     * This event signature is obtained by: `keccak256("ItemRemoved(address,uint256)")`.
+     */
+    bytes32 internal constant _ITEM_REMOVED_EVENT_SIGNATURE = 0x678419c073b2eba6e89e003798c3e19e378b27373fa408a4dd0347e052487bda;
 }

@@ -15,6 +15,9 @@ abstract contract Item is IItem, IItemErrors {
         return numData & _ITEM_ID_MASK;
     }
 
+    /**
+     * @dev Gets the hash of an item addition or removal from a player's inventory.
+     */
     function itemDataHash(address player, uint256 itemId, bytes32 salt, uint256 timestamp) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(player, itemId, salt, timestamp));
     }
