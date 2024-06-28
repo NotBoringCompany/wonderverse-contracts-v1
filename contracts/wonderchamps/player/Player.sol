@@ -314,7 +314,7 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
      * @dev Checks whether a player exists.
      */
     function _checkPlayerExists(address player) private view {
-        if (!playerExists(player)) {
+        if (playerExists(player)) {
             revert PlayerAlreadyExists();
         }
     }
