@@ -66,4 +66,12 @@ abstract contract EventSignatures {
      * This event signature is obtained by `keccak256("LeagueDataAdded(address,uint256)")`.
      */
     bytes32 internal constant _LEAGUE_DATA_ADDED_EVENT_SIGNATURE = 0xe1a3b98a9976c6d2ea620746c483905be7679b691bd423620d828fc4c7128a3e;
+
+    /**
+     * @dev Event signature for emitting a OwnedIGCUpdated event upon removing league data for a season.
+     *
+     * This event signature is obtained by `keccak256("OwnedIGCUpdated(address,uint256)")`.
+     */
+    bytes32 internal constant _OWNED_IGC_UPDATED_EVENT_SIGNATURE = 0x2ed7a31507744323e8ab6e61ae43d9767f16a9b71bfb88d661eb6b56fb8cac5d;
+
 }

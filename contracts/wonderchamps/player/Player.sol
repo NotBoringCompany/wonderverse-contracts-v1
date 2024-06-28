@@ -114,6 +114,36 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
     }
 
     /**
+     * @dev Updates the packed IGC value owned by a player.
+     *
+     * NOTE: Requires the admin's signature.
+     */
+    function updateOwnedIGC(
+        address player, 
+        uint256 newIGC, 
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
+    ) external {
+        // ensure that the signature is valid (i.e. the recovered address is the admin's address)
+        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+
+        // update the player's IGC value.
+        ownedIGC[player] = newIGC;
+
+        // emit the OwnedIGCUpdated event.
+        assembly {
+            log3(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _OWNED_IGC_UPDATED_EVENT_SIGNATURE,
+                player,
+                newIGC
+            )
+        }
+    }
+
+    /**
      * @dev Fetches one or multiple item data for a player given the item IDs.
      */
     function getItems(address player, uint256[] calldata itemIds) external view onlyPlayerOrAdmin(player) returns (OwnedItem[] memory) {

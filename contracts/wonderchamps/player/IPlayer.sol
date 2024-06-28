@@ -31,6 +31,13 @@ interface IPlayer is IItem, IItemFragment, ILeagueData {
         uint256[] calldata leagueSeasons
     ) external view returns (Player memory);
     function getOwnedIGC(address player) external view returns (uint256);
+    function updateOwnedIGC(
+        address player, 
+        uint256 newIGC, 
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
+    ) external;
     function playerExists(address player) external view returns (bool);
     function createPlayer(
         address player, 
