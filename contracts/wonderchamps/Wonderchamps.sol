@@ -42,68 +42,114 @@ contract Wonderchamps is Player {
     }
 
     /**
-     * @dev Adds an item to a player's inventory.
+     * @dev Adds one or multiple items to a player's inventory.
      *
-     * If an item is already owned by the player, an error is thrown to prevent any unintentional overwriting.
+     * If an item is already owned by the player, skip this item.
      *
      * NOTE: Requires the admin's signature.
      */
-    function addItemToInventory(
-        address player, 
-        OwnedItem calldata item,
+    function addItemsToInventory(
+        address player,
+        OwnedItem[] calldata items,
         // [0] - salt
         // [1] - adminSig
         bytes[2] calldata sigData
-    ) external onlyUnownedItem(player, _getItemID(item.numData)) {
-        uint256 itemId = _getItemID(item.numData);
-
+    ) external {
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[1]
+        );
 
-        // add the item to the player's inventory.
-        ownedItems[player][itemId] = item;
+        for (uint256 i = 0; i < items.length;) {
+            uint256 itemId = _getItemID(items[i].numData);
 
-        // emit the ItemAdded event.
-        assembly {
-            log3(
-                0, // 0 offset because no additional data is appended
-                0, // 0 size because no additional data is appended
-                _ITEM_ADDED_EVENT_SIGNATURE,
-                player,
-                itemId
-            )
+            if (ownedItems[player][itemId].owned) {
+                unchecked {
+                    ++i;
+                    continue;
+                }
+            }
+
+            // add the item to the player's inventory.
+            ownedItems[player][itemId] = items[i];
+
+            // emit the ItemAdded event.
+            assembly {
+                log3(
+                    0, // 0 offset because no additional data is appended
+                    0, // 0 size because no additional data is appended
+                    _ITEM_ADDED_EVENT_SIGNATURE,
+                    player,
+                    itemId
+                )
+            }
+
+            unchecked {
+                ++i;
+            }
         }
-    } 
+    }
 
     /**
-     * @dev Removes an item from a player's inventory.
+     * @dev Removes one or more items from a player's inventory.
+     *
+     * If one or more items are not owned by the player, skip these items.
      *
      * NOTE: Requires both the admin and the player's signatures.
      */
-    function removeItemFromInventory(
-        address player, 
-        uint256 itemId,
+    function removeItemsFromInventory(
+        address player,
+        uint256[] calldata itemIds,
         // [0] - salt
         // [1] - adminSig
         // [2] - playerSig
         bytes[3] calldata sigData
-    )  external onlyOwnedItem(player, itemId) {
+    ) external {
         // check if both the admin and the player's signatures are valid.
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
-        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[2], player);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[1]
+        );
+        _checkSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[2],
+            player
+        );
 
-        // remove the item from the player's inventory.
-        delete ownedItems[player][itemId];
+        for (uint256 i = 0; i < itemIds.length;) {
+            uint256 itemId = itemIds[i];
 
-        // emit the ItemRemoved event.
-        assembly {
-            log3(
-                0, // 0 offset because no additional data is appended
-                0, // 0 size because no additional data is appended
-                _ITEM_REMOVED_EVENT_SIGNATURE,
-                player,
-                itemId
-            )
+            if (!ownedItems[player][itemId].owned) {
+                unchecked {
+                    ++i;
+                    continue;
+                }
+            }
+
+            // remove the item from the player's inventory.
+            delete ownedItems[player][itemId];
+
+            // emit the ItemRemoved event.
+            assembly {
+                log3(
+                    0, // 0 offset because no additional data is appended
+                    0, // 0 size because no additional data is appended
+                    _ITEM_REMOVED_EVENT_SIGNATURE,
+                    player,
+                    itemId
+                )
+            }
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -116,7 +162,7 @@ contract Wonderchamps is Player {
         address player,
         // [0] - itemId
         // [1] - numData
-        uint256[2] calldata data, 
+        uint256[2] calldata data,
         // [0] - salt
         // [1] - adminSig
         bytes[2] calldata sigData
@@ -124,7 +170,12 @@ contract Wonderchamps is Player {
         uint256 itemId = data[0];
 
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[1]
+        );
 
         // update the item's {numData}.
         ownedItems[player][itemId].numData = data[1];
@@ -147,7 +198,7 @@ contract Wonderchamps is Player {
      * NOTE: Requires the admin's signature.
      */
     function updateOwnedItemAdditionalData(
-        address player, 
+        address player,
         uint256 itemId,
         bytes[] memory _additionalData,
         // [0] - salt
@@ -155,7 +206,12 @@ contract Wonderchamps is Player {
         bytes[] calldata sigData
     ) external onlyOwnedItem(player, itemId) {
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[1]
+        );
 
         // update the item's {additionalData}.
         ownedItems[player][itemId].additionalData = _additionalData;
@@ -173,34 +229,54 @@ contract Wonderchamps is Player {
     }
 
     /**
-     * @dev Adds an item fragment to a player's inventory.
+     * @dev Adds one or more item fragments to a player's inventory.
+     *
+     * If an item fragment is already owned by the player, skip this item fragment.
      *
      * NOTE: Requires the admin's signature.
      */
-    function addItemFragmentToInventory(
-        address player, 
-        OwnedItemFragment calldata fragment,
+    function addItemFragmentsToInventory(
+        address player,
+        OwnedItemFragment[] calldata fragments,
         // [0] - salt
         // [1] - adminSig
         bytes[2] calldata sigData
-    ) external onlyUnownedItemFragment(player, _getItemID(fragment.numData)) {
-        uint256 fragmentId = _getItemID(fragment.numData);
-
+    ) external {
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[1]
+        );
 
-        // add the item fragment to the player's inventory.
-        ownedItemFragments[player][fragmentId] = fragment;
+        for (uint256 i = 0; i < fragments.length;) {
+            uint256 fragmentId = _getItemID(fragments[i].numData);
 
-        // emit the ItemFragmentAdded event.
-        assembly {
-            log3(
-                0, // 0 offset because no additional data is appended
-                0, // 0 size because no additional data is appended
-                _ITEM_FRAGMENT_ADDED_EVENT_SIGNATURE,
-                player,
-                fragmentId
-            )
+            if (ownedItemFragments[player][fragmentId].owned) {
+                unchecked {
+                    ++i;
+                    continue;
+                }
+            }
+
+            // add the item fragment to the player's inventory.
+            ownedItemFragments[player][fragmentId] = fragments[i];
+
+            // emit the ItemFragmentAdded event.
+            assembly {
+                log3(
+                    0, // 0 offset because no additional data is appended
+                    0, // 0 size because no additional data is appended
+                    _ITEM_FRAGMENT_ADDED_EVENT_SIGNATURE,
+                    player,
+                    fragmentId
+                )
+            }
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -221,7 +297,12 @@ contract Wonderchamps is Player {
         uint256 fragmentId = data[0];
 
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[1]
+        );
 
         // update the item fragment's quantity.
         ownedItemFragments[player][fragmentId].numData = data[1];
@@ -239,34 +320,62 @@ contract Wonderchamps is Player {
     }
 
     /**
-     * @dev Removes an item fragment from a player's inventory.
+     * @dev Removes one or more item fragments from a player's inventory.
+     *
+     * If one or more item fragments are not owned by the player, skip these item fragments.
      *
      * NOTE: Requires both the admin and the player's signatures.
      */
-    function removeItemFragmentFromInventory(
+    function removeItemFragmentsFromInventory(
         address player,
-        uint256 fragmentId,
+        uint256[] calldata fragmentIds,
         // [0] - salt
         // [1] - adminSig
         // [2] - playerSig
         bytes[3] calldata sigData
-    ) external onlyOwnedItemFragment(player, fragmentId) {
+    ) external {
         // check if both the admin and the player's signatures are valid.
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
-        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[2], player);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[1]
+        );
+        _checkSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[2],
+            player
+        );
 
-        // remove the item fragment from the player's inventory.
-        delete ownedItemFragments[player][fragmentId];
+        for (uint256 i = 0; i < fragmentIds.length;) {
+            uint256 fragmentId = fragmentIds[i];
 
-        // emit the ItemFragmentRemoved event.
-        assembly {
-            log3(
-                0, // 0 offset because no additional data is appended
-                0, // 0 size because no additional data is appended
-                _ITEM_FRAGMENT_REMOVED_EVENT_SIGNATURE,
-                player,
-                fragmentId
-            )
+            if (!ownedItemFragments[player][fragmentId].owned) {
+                unchecked {
+                    ++i;
+                    continue;
+                }
+            }
+
+            // remove the item fragment from the player's inventory.
+            delete ownedItemFragments[player][fragmentId];
+
+            // emit the ItemFragmentRemoved event.
+            assembly {
+                log3(
+                    0, // 0 offset because no additional data is appended
+                    0, // 0 size because no additional data is appended
+                    _ITEM_FRAGMENT_REMOVED_EVENT_SIGNATURE,
+                    player,
+                    fragmentId
+                )
+            }
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -276,7 +385,7 @@ contract Wonderchamps is Player {
      * NOTE: Requires the admin's signature.
      */
     function addLeagueData(
-        address player, 
+        address player,
         LeagueData calldata data,
         // [0] - salt
         // [1] - adminSig
@@ -285,7 +394,12 @@ contract Wonderchamps is Player {
         uint256 season = _getLeagueSeason(data.stats);
 
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(
+                dataHash(player, sigData[0])
+            ),
+            sigData[1]
+        );
 
         // add the league data to the player's stats.
         leagueData[player][season] = data;
@@ -310,7 +424,11 @@ contract Wonderchamps is Player {
      * In the case this function is called for checking if an item to be added is already owned, {add} should be true.
      * If the case is to check if an item to be deleted isn't owned, {add} should be false.
      */
-    function _checkItemOwned(address player, uint256 itemId, bool add) private view {
+    function _checkItemOwned(
+        address player,
+        uint256 itemId,
+        bool add
+    ) private view {
         // to check if an item exists, we can simply check if the item's {owned} field is set to true.
         if (add) {
             if (ownedItems[player][itemId].owned) {
@@ -331,7 +449,11 @@ contract Wonderchamps is Player {
      * In the case this function is called for checking if an item fragment to be added is already owned, {add} should be true.
      * If the case is to check if an item fragment to be deleted isn't owned, {add} should be false.
      */
-    function _checkItemFragmentOwned(address player, uint256 fragmentId, bool add) private view {
+    function _checkItemFragmentOwned(
+        address player,
+        uint256 fragmentId,
+        bool add
+    ) private view {
         // to check if an item fragment exists, we can simply check if the item fragment's {owned} field is set to true.
         if (add) {
             if (ownedItemFragments[player][fragmentId].owned) {
@@ -347,7 +469,10 @@ contract Wonderchamps is Player {
     /**
      * @dev Checks if the league data for a particular season for a user already exists.
      */
-    function _checkLeagueDataExists(address player, uint256 season) private view {
+    function _checkLeagueDataExists(
+        address player,
+        uint256 season
+    ) private view {
         if (leagueData[player][season].stats != 0) {
             revert LeagueDataAlreadyExists(season);
         }

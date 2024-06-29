@@ -126,7 +126,10 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         bytes[2] calldata sigData
     ) external {
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
+            sigData[1]
+        );
 
         // update the player's IGC value.
         ownedIGC[player] = newIGC;
@@ -206,7 +209,10 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         bytes[2] calldata sigData
     ) external onlyNewPlayer(player) {
         // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
+            sigData[1]
+        );
 
         // create the player instance by setting the player's {hasAccount} mapping to true.
         // NOTE: 
@@ -244,8 +250,15 @@ abstract contract Player is IPlayer, IPlayerErrors, Item, AccessControl, EventSi
         bytes[3] calldata sigData
     ) external {
         // check if both the admin and the player's signatures are valid.
-        _checkAddressIsAdmin(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[1]);
-        _checkAddressMatches(MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])), sigData[2], player);
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
+            sigData[1]
+        );
+        _checkSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
+            sigData[2],
+            player
+        );
 
         // delete the player instance.
         hasAccount[player] = false;

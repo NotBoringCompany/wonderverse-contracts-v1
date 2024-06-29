@@ -11,41 +11,24 @@ abstract contract Signatures is ISignatureErrors, AccessControl {
     using ECDSA for bytes32;
 
     /**
-     * @dev Checks if the recovered address from {_recoverAddress} matches the expected address.
+     * @dev Checks if a player's signature is valid.
      */
-    function _addressMatches(bytes32 messageHash, bytes calldata sig, address expected) internal pure returns (bool) {
-        return _recoverAddress(messageHash, sig) == expected;
-    }
+    function _checkSignatureValid(bytes32 messageHash, bytes calldata sig, address expected) internal pure {
+        address recovered = ECDSA.recover(messageHash, sig);
 
-    /**
-     * @dev Checks if the recovered address from {_recoverAddress} is an admin.
-     */
-    function _addressIsAdmin(bytes32 messageHash, bytes calldata sig) internal view returns (bool) {
-        return hasRole(DEFAULT_ADMIN_ROLE, _recoverAddress(messageHash, sig));
-    }
-
-    /**
-     * @dev Recovers the address which signed the {messageHash}.
-     */
-    function _recoverAddress(bytes32 messageHash, bytes calldata sig) internal pure returns (address) {
-        return ECDSA.recover(messageHash, sig);
-    }
-
-    /**
-     * @dev Checks if the recovered address from {_recoverAddress} matches the expected address and throws if it doesn't.
-     */
-    function _checkAddressMatches(bytes32 messageHash, bytes calldata sig, address expected) internal pure {
-        if (!_addressMatches(messageHash, sig, expected)) {
-            revert InvalidPlayerSignature();
+        if (recovered != expected) {
+            revert InvalidPlayerSignature(expected, recovered);
         }
     }
 
     /**
-     * @dev Checks if the recovered address from {_recoverAddress} is an admin and throws if it isn't.
+     * @dev Checks if an admin's signature is valid.
      */
-    function _checkAddressIsAdmin(bytes32 messageHash, bytes calldata sig) internal view {
-        if (!_addressIsAdmin(messageHash, sig)) {
-            revert InvalidAdminSignature();
+    function _checkAdminSignatureValid(bytes32 messageHash, bytes calldata sig) internal view {
+        address recovered = ECDSA.recover(messageHash, sig);
+
+        if (!hasRole(DEFAULT_ADMIN_ROLE, ECDSA.recover(messageHash, sig))) {
+            revert InvalidAdminSignature(recovered);
         }
     }
 }

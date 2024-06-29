@@ -27,16 +27,16 @@ interface IItem {
     }
 
     function getItems(address player, uint256[] calldata itemIds) external view returns (OwnedItem[] memory);
-    function addItemToInventory(
+    function addItemsToInventory(
         address player, 
-        OwnedItem calldata item,
+        OwnedItem[] calldata items,
         // [0] - salt
         // [1] - adminSig
         bytes[2] calldata sigData
     ) external;
-    function removeItemFromInventory(
+    function removeItemsFromInventory(
         address player, 
-        uint256 itemId,
+        uint256[] calldata itemIds,
         // [0] - salt
         // [1] - adminSig
         // [2] - playerSig

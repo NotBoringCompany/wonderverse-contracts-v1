@@ -7,10 +7,10 @@ interface ISignatureErrors {
     /**
      * @dev Throws if the recovered address doesn't match the admin's address; i.e. the signature is invalid.
      */
-    error InvalidAdminSignature();
+    error InvalidAdminSignature(address recovered);
 
     /**
      * @dev Throws if the recovered address doesn't match the player's address; i.e. the signature is invalid.
      */
-    error InvalidPlayerSignature();
+    error InvalidPlayerSignature(address expected, address recovered);
 }

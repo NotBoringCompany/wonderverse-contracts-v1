@@ -18,12 +18,20 @@ interface IItemFragment {
     }
 
     function getItemFragments(address player, uint256[] calldata fragmentIds) external view returns (OwnedItemFragment[] memory);
-    function addItemFragmentToInventory(
+    function addItemFragmentsToInventory(
         address player, 
-        OwnedItemFragment calldata fragment,
+        OwnedItemFragment[] calldata fragments,
         // [0] - salt
         // [1] - adminSig
         bytes[2] calldata sigData
+    ) external;
+    function removeItemFragmentsFromInventory(
+        address player,
+        uint256[] calldata fragmentIds,
+        // [0] - salt
+        // [1] - adminSig
+        // [2] - playerSig
+        bytes[3] calldata sigData
     ) external;
     function updateItemFragmentNumData(
         address player,
@@ -33,13 +41,5 @@ interface IItemFragment {
         // [0] - salt
         // [1] - adminSig
         bytes[2] calldata sigData
-    ) external;
-    function removeItemFragmentFromInventory(
-        address player,
-        uint256 fragmentId,
-        // [0] - salt
-        // [1] - adminSig
-        // [2] - playerSig
-        bytes[3] calldata sigData
     ) external;
 }
