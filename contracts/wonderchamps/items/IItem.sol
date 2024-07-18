@@ -17,8 +17,8 @@ interface IItem {
         // [160 - 255] - additional numerical data (96 bits)
         //
         // NOTE: for vehicles: 
-        // [160 - 176] is stored for the base speed
-        // [177 - 191] is stored for the speed limit
+        // [160 - 175] is stored for the base speed
+        // [176 - 191] is stored for the speed limit
         uint256 numData;
         // any additional data for the item (e.g. buffs, etc.)
         // each additional data should be grouped into a specific "category" per index.
