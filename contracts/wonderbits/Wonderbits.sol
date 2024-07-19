@@ -4,11 +4,12 @@ pragma solidity ^0.8.26;
 
 import "./player/IPlayer.sol";
 import "./player/IPlayerErrors.sol";
+import "./actions/IAction.sol";
 import "./utils/Signatures.sol";
 import "./utils/EventSignatures.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
-contract Wonderbits is IPlayer, IPlayerErrors, Signatures, EventSignatures {
+contract Wonderbits is IPlayer, IPlayerErrors, IAction, Signatures, EventSignatures {
     using MessageHashUtils for bytes32;
 
     // maps from the player's address to a boolean value indicating whether they've created an account.
@@ -94,6 +95,41 @@ contract Wonderbits is IPlayer, IPlayerErrors, Signatures, EventSignatures {
             unchecked {
                 ++i;
             }
+        }
+    }
+
+    /**
+     * @dev Increments the counter for a specific action of a player by 1.
+     *
+     * This should be called when the user completes an action tracked by Mixpanel in the game.
+     */
+    function incrementActionCounter(
+        address player,
+        bytes32 action,
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
+    ) external virtual override onlyPlayerOrAdmin(player) {
+        // ensure that the signature is valid (i.e. the recovered address is the player's address)
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
+            sigData[1]
+        );
+
+        // increment the action counter by 1.
+        unchecked {
+            actionCounters[player][action]++;
+        }
+
+        assembly {
+            // emit the ActionCounterIncremented event.
+            log3(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _ACTION_COUNTER_INCREMENTED_EVENT_SIGNATURE,
+                player,
+                action
+            )
         }
     }
 
