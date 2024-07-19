@@ -109,7 +109,7 @@ contract Wonderbits is IPlayer, IPlayerErrors, IAction, Signatures, EventSignatu
         // [0] - salt
         // [1] - adminSig
         bytes[2] calldata sigData
-    ) external virtual override onlyPlayerOrAdmin(player) {
+    ) external {
         // ensure that the signature is valid (i.e. the recovered address is the player's address)
         _checkAdminSignatureValid(
             MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
@@ -129,6 +129,42 @@ contract Wonderbits is IPlayer, IPlayerErrors, IAction, Signatures, EventSignatu
                 _ACTION_COUNTER_INCREMENTED_EVENT_SIGNATURE,
                 player,
                 action
+            )
+        }
+    }
+
+    /**
+     * @dev Updates the counter for a specific action of a player to a new value.
+     *
+     * NOTE: this should be used seldomly and only if needed, such as resetting the counter to a specific number.
+     * for most use cases, {incrementActionCounter} should be used to increment the counter.
+     */
+    function updateActionCounter(
+        address player, 
+        bytes32 action, 
+        uint256 newCounter, 
+        // [0] - salt
+        // [1] - adminSig
+        bytes[2] calldata sigData
+    ) external {
+        // ensure that the signature is valid (i.e. the recovered address is the player's address)
+        _checkAdminSignatureValid(
+            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
+            sigData[1]
+        );
+
+        // update the action counter to the new value.
+        actionCounters[player][action] = newCounter;
+
+        assembly {
+            // emit the ActionCounterUpdated event.
+            log4(
+                0, // 0 offset because no additional data is appended
+                0, // 0 size because no additional data is appended
+                _ACTION_COUNTER_UPDATED_EVENT_SIGNATURE,
+                player,
+                action,
+                newCounter
             )
         }
     }
