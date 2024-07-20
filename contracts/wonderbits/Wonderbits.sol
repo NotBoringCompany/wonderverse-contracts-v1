@@ -4,13 +4,14 @@ pragma solidity ^0.8.26;
 
 import "./player/IPlayer.sol";
 import "./player/IPlayerErrors.sol";
+import "./utils/IAccessControlErrors.sol";
 import "./actions/IAction.sol";
 import "./points/IPoints.sol";
-import "./utils/Signatures.sol";
 import "./utils/EventSignatures.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract Wonderbits is IPlayer, IPlayerErrors, IAction, IPoints, Signatures, EventSignatures {
+contract Wonderbits is IPlayer, IPlayerErrors, IAccessControlErrors, IAction, IPoints, AccessControl, EventSignatures {
     using MessageHashUtils for bytes32;
 
     // maps from the player's address to a boolean value indicating whether they've created an account.
@@ -27,10 +28,10 @@ contract Wonderbits is IPlayer, IPlayerErrors, IAction, IPoints, Signatures, Eve
     }
 
     /**
-     * @dev Modifier to check for caller being the player or an admin.
+     * @dev Modifier that checks if the caller is an admin and reverts if not.
      */
-    modifier onlyPlayerOrAdmin(address player) {
-        _checkPlayerOrAdmin(player);
+    modifier onlyAdmin() {
+        _checkAdmin();
         _;
     }
 
@@ -46,21 +47,8 @@ contract Wonderbits is IPlayer, IPlayerErrors, IAction, IPoints, Signatures, Eve
      * @dev Creates a new player instance.
      *
      * The player must NOT already exist.
-     *
-     * Requires the admin's signature.
      */
-    function createPlayer(
-        address player,
-        // [0] - salt
-        // [1] - adminSig
-        bytes[2] calldata sigData
-    ) external virtual onlyNewPlayer(player) {
-        // ensure that the signature is valid (i.e. the recovered address is the admin's address)
-        _checkAdminSignatureValid(
-            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
-            sigData[1]
-        );
-
+    function createPlayer(address player) external virtual onlyNewPlayer(player) onlyAdmin() {
         // create the player instance by setting the player's {hasAccount} mapping to true.
         // NOTE:
         // other mappings are not set here because they can be left at default values.
@@ -106,17 +94,8 @@ contract Wonderbits is IPlayer, IPlayerErrors, IAction, IPoints, Signatures, Eve
      */
     function incrementActionCounter(
         address player,
-        bytes32 action,
-        // [0] - salt
-        // [1] - adminSig
-        bytes[2] calldata sigData
-    ) external {
-        // ensure that the signature is valid (i.e. the recovered address is the player's address)
-        _checkAdminSignatureValid(
-            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
-            sigData[1]
-        );
-
+        bytes32 action
+    ) external onlyAdmin() {
         // increment the action counter by 1.
         unchecked {
             actionCounters[player][action]++;
@@ -143,17 +122,8 @@ contract Wonderbits is IPlayer, IPlayerErrors, IAction, IPoints, Signatures, Eve
     function updateActionCounter(
         address player, 
         bytes32 action, 
-        uint256 newCounter, 
-        // [0] - salt
-        // [1] - adminSig
-        bytes[2] calldata sigData
-    ) external {
-        // ensure that the signature is valid (i.e. the recovered address is the player's address)
-        _checkAdminSignatureValid(
-            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
-            sigData[1]
-        );
-
+        uint256 newCounter
+    ) external onlyAdmin() {
         // update the action counter to the new value.
         actionCounters[player][action] = newCounter;
 
@@ -172,22 +142,11 @@ contract Wonderbits is IPlayer, IPlayerErrors, IAction, IPoints, Signatures, Eve
 
     /**
      * @dev Updates the player's points.
-     *
-     * Requires the admin's signature.
      */
     function updatePoints(
         address player,
-        uint256 _points,
-        // [0] - salt
-        // [1] - adminSig
-        bytes[2] calldata sigData
-    ) external {
-        // ensure that the signature is valid (i.e. the recovered address is the player's address)
-        _checkAdminSignatureValid(
-            MessageHashUtils.toEthSignedMessageHash(dataHash(player, sigData[0])),
-            sigData[1]
-        );
-
+        uint256 _points
+    ) external onlyAdmin() {
         // update the player's points to the new value.
         points[player] = _points;
 
@@ -211,19 +170,12 @@ contract Wonderbits is IPlayer, IPlayerErrors, IAction, IPoints, Signatures, Eve
     }
 
     /**
-     * @dev Fetches the data hash for any signature-related operation given a specific {salt}.
+     * @dev Checks if the caller is an admin and reverts if not.
      */
-    function dataHash(address player, bytes calldata salt) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(player, salt));
-    }
-
-    /**
-     * @dev Checks if the caller is the player or an admin and reverts if not.
-     */
-    function _checkPlayerOrAdmin(address player) private view {
-       if (_msgSender() != player && !hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert NotSelfOrAdmin();
-        } 
+    function _checkAdmin() private view {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+            revert NotAdmin();
+        }
     }
 
     /**

@@ -8,17 +8,11 @@ pragma solidity ^0.8.26;
 interface IAction {
     function incrementActionCounter(
         address player, 
-        bytes32 action, 
-        // [0] - salt
-        // [1] - adminSig
-        bytes[2] calldata sigData
+        bytes32 action
     ) external;
     function updateActionCounter(
         address player, 
         bytes32 action, 
-        uint256 newCounter,
-        // [0] - salt
-        // [1] - adminSig
-        bytes[2] calldata sigData
+        uint256 newCounter
     ) external;
 }

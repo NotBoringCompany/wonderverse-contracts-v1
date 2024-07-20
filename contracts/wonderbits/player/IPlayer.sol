@@ -7,5 +7,5 @@ pragma solidity ^0.8.26;
  */
 interface IPlayer {
     function getPlayer(address player, bytes32[] calldata actions) external view returns (uint256 _points, uint256[] memory actionCounters);
-    function createPlayer(address player, bytes[2] calldata sigData) external;
+    function createPlayer(address player) external;
 }
