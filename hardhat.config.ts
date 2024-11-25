@@ -5,11 +5,24 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const deployerWallet: string = process.env.DEPLOYER_PRIVATE_KEY ?? '';
+const testDeployerWallet: string = process.env.TEST_DEPLOYER_PRIVATE_KEY ?? '';
 const ETHERSCAN_API_KEY = vars.get("ETHERSCAN_API_KEY");
 
 const config: HardhatUserConfig = {
   etherscan: {
-    apiKey: ETHERSCAN_API_KEY,
+    apiKey: {
+      kairos: 'unnecessary',
+    },
+    customChains: [
+      {
+        network: "kairos",
+        chainId: 1001,
+        urls: {
+          apiURL: "https://api-baobab.klaytnscope.com/api",
+          browserURL: "https://kairos.kaiascope.com",
+        },
+      },
+    ]
   },
   networks: {
     blastSepolia: {
@@ -26,15 +39,21 @@ const config: HardhatUserConfig = {
       url: `https://sepolia.base.org`,
       chainId: 84532,
       accounts: [`0x${deployerWallet}`],
+    },
+    kairos: {
+      url: `https://kaia-kairos.blockpi.network/v1/rpc/public`,
+      chainId: 1001,
+      accounts: [`0x${testDeployerWallet}`],
     }
   },
   solidity: {
-    version: "0.8.24",
+    version: "0.8.26",
     settings: {
       optimizer: {
         enabled: true,
         runs: 200
       },
+      evmVersion: "cancun",
       viaIR: true,
     }
   }
