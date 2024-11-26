@@ -1,5 +1,7 @@
 {
   "WonderbitsModule#Wonderbits": "0x857Ae642017cc18dA2543B9C9dF840b1C1642Eb7",
   "IslandsModule#Islands": "0x737a8c150a608cEF249921a46A75A7921d2c9FDD",
-  "BitCosmeticsModule#BitCosmetics": "0x88217Eb5eD328374A0c0646C7c2e661f79b836D6"
+  "BitCosmeticsModule#BitCosmetics": "0x88217Eb5eD328374A0c0646C7c2e661f79b836D6",
+  "WonderbitsSFTModule#WonderbitsSFT": "0xB9F6e52642D4EfF55246a4f0fb2315319D3C0aDC",
+  "CustodialModule#Custodial": "0x4b279Bc4a306b2Da22cf5C4504856D6C1f29F780"
 }
