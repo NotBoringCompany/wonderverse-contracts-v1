@@ -43,7 +43,7 @@ const config: HardhatUserConfig = {
     kairos: {
       url: `https://kaia-kairos.blockpi.network/v1/rpc/public`,
       chainId: 1001,
-      accounts: [`0x${testDeployerWallet}`],
+      accounts: [`0x${deployerWallet}`],
     }
   },
   solidity: {

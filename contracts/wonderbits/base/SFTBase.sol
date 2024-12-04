@@ -23,18 +23,18 @@ abstract contract SFTBase is ERC1155, Signatures, Hashes {
         address to,
         uint256 id,
         uint256 amount,
-        bytes calldata data,
         // [0] - salt
         // [1] - adminSig
-        bytes[2] calldata sigData
+        // [2] - optional data for minting
+        bytes[3] calldata data
     ) external virtual {
         // ensure that the admin's signature is valid
         _checkAdminSignatureValid(
-            MessageHashUtils.toEthSignedMessageHash(opHash(to, sigData[0])),
-            sigData[1]
+            MessageHashUtils.toEthSignedMessageHash(opHash(to, data[0])),
+            data[1]
         );
 
-        _mint(to, id, amount, data);
+        _mint(to, id, amount, data[2]);
     }
 
     /**
@@ -46,15 +46,18 @@ abstract contract SFTBase is ERC1155, Signatures, Hashes {
         address to,
         uint256[] calldata ids,
         uint256[] calldata amounts,
-        bytes calldata data
+        // [0] - salt
+        // [1] - adminSig
+        // [2] - optional data for minting
+        bytes[3] calldata data
     ) external virtual {
         // ensure that the admin's signature is valid
         _checkAdminSignatureValid(
-            MessageHashUtils.toEthSignedMessageHash(opHash(to, data)),
-            data
+            MessageHashUtils.toEthSignedMessageHash(opHash(to, data[0])),
+            data[1]
         );
 
-        _mintBatch(to, ids, amounts, data);
+        _mintBatch(to, ids, amounts, data[2]);
     }
 
     /**

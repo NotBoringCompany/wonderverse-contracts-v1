@@ -18,7 +18,7 @@ abstract contract Signatures is ISignatureErrors, AccessControl {
     function _checkAdminSignatureValid(bytes32 messageHash, bytes calldata sig) internal view {
         address recovered = ECDSA.recover(messageHash, sig);
 
-        if (!hasRole(DEFAULT_ADMIN_ROLE, ECDSA.recover(messageHash, sig))) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, recovered)) {
             revert InvalidAdminSignature(recovered);
         }
     }

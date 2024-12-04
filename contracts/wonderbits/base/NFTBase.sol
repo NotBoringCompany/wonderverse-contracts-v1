@@ -21,6 +21,13 @@ abstract contract NFTBase is ERC721AQueryable, ERC721ABurnable, Signatures, Hash
     string private baseURI_;
 
     /**
+     * @dev Returns the next token ID to be minted.
+     */
+    function nextTokenId() external view returns (uint256) {
+        return _nextTokenId();
+    }
+
+    /**
      * @dev Mints a new NFT to {to}.
      * 
      * Requires the admin's signature to mint.
@@ -45,13 +52,6 @@ abstract contract NFTBase is ERC721AQueryable, ERC721ABurnable, Signatures, Hash
      */
     function setBaseURI(string calldata uri) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
         baseURI_ = uri;
-    }
-
-    /**
-     * @dev Overrides {ERC721A-_baseURI} to return the base URI from {_baseURI} instead.
-     */
-    function _baseURI() internal view virtual override returns (string memory) {
-        return baseURI_;
     }
 
     /**
@@ -85,6 +85,20 @@ abstract contract NFTBase is ERC721AQueryable, ERC721ABurnable, Signatures, Hash
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721A, IERC721A, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @dev Overrides the start token ID to be 1.
+     */
+    function _startTokenId() internal view virtual override returns (uint256) {
+        return 1;
+    }
+
+    /**
+     * @dev Overrides {ERC721A-_baseURI} to return the base URI from {_baseURI} instead.
+     */
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseURI_;
     }
 
     /********* WITHDRAWALS*************** */
