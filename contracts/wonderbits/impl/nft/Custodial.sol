@@ -105,6 +105,17 @@ contract Custodial is ICustodial, ICustodialErrors, AccessControl, Signatures, E
 
         // record the custody of the token.
         _custody[nftContract][tokenId] = address(0);
+
+        // emit a ReleaseFromCustody event efficiently
+        assembly {
+            log3(
+                0,
+                0,
+                _RELEASE_FROM_CUSTODY_EVENT_SIGNATURE,
+                nftContract,
+                tokenId
+            )
+        }
     }
 
     /********* WITHDRAWALS*************** */
