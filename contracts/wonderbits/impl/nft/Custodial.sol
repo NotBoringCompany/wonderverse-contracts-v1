@@ -3,7 +3,7 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "../../interfaces/ICustodial.sol";
+import "../../interfaces/ICustodialNoSig.sol";
 import "../../errors/ICustodialErrors.sol";
 import "../../utils/EventSignatures.sol";
 import "../../utils/Signatures.sol";
@@ -16,8 +16,10 @@ import "../../utils/Hashes.sol";
  * @dev Custodial contract to handle custody of a user's NFTs while being used in-game.
  *
  * Supports all NFT contracts in Wonderbits.
+ *
+ * This is the 'no sig' version which does not require a signature to mint as the admin will handle the minting.
  */
-contract Custodial is ICustodial, ICustodialErrors, AccessControl, Signatures, EventSignatures, Hashes {
+contract Custodial is ICustodialNoSig, ICustodialErrors, AccessControl, Signatures, EventSignatures, Hashes {
     // maps from the NFT contract address to the token ID to the original owner's address.
     // NOTE: if the token has not been transferred into custody, the zero address will be returned.
     mapping (address => mapping (uint256 => address)) private _custody;
@@ -27,29 +29,17 @@ contract Custodial is ICustodial, ICustodialErrors, AccessControl, Signatures, E
     }
 
     /**
-     * @dev Stores an NFT in custody, allowing the user to use it in-game.
-     *
-     * NOTE: {contract} - the NFT contract address of the token to store in custody.
-     *
-     * Requires the admin's signature.
+     * @dev Stores an NFT owned by `to` in custody, allowing the user to use it in-game.
      */
     function storeInCustody(
-        address nftContract, 
-        uint256 tokenId,
-        // [0] - salt
-        // [1] - adminSig
-        bytes[2] calldata sigData
-    ) external virtual {
-        // ensure that the admin's signature is valid
-        _checkAdminSignatureValid(
-            MessageHashUtils.toEthSignedMessageHash(opHash(_msgSender(), sigData[0])),
-            sigData[1]
-        );
-
+        address nftContract,
+        address owner,
+        uint256 tokenId
+    ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
         IERC721A c = IERC721A(nftContract);
 
-        // check if the token is owned by the caller. throws if not
-        if (c.ownerOf(tokenId) != _msgSender()) {
+        // check if `owner` is the owner of the NFT
+        if (c.ownerOf(tokenId) != owner) {
             revert NotTokenOwner();
         }
 
@@ -59,10 +49,10 @@ contract Custodial is ICustodial, ICustodialErrors, AccessControl, Signatures, E
         }
 
         // transfer the NFT to this contract
-        c.safeTransferFrom(_msgSender(), address(this), tokenId);
+        c.safeTransferFrom(owner, address(this), tokenId);
 
         // record the custody of the token.
-        _custody[nftContract][tokenId] = _msgSender();
+        _custody[nftContract][tokenId] = owner;
 
         // emit a StoreInCustody event efficiently
         assembly {
@@ -78,30 +68,21 @@ contract Custodial is ICustodial, ICustodialErrors, AccessControl, Signatures, E
 
     /**
      * @dev Releases an NFT from custody, transferring the NFT back to the original owner.
-     *
-     * Requires the admin's signature.
      */
     function releaseFromCustody(
-        address nftContract, 
-        uint256 tokenId,
-        // [0] - salt
-        // [1] - adminSig
-        bytes[2] calldata sigData
-    ) external {// ensure that the admin's signature is valid
-        _checkAdminSignatureValid(
-            MessageHashUtils.toEthSignedMessageHash(opHash(_msgSender(), sigData[0])),
-            sigData[1]
-        );
-
+        address nftContract,
+        address owner,
+        uint256 tokenId
+    ) external {
         IERC721A c = IERC721A(nftContract);
 
-        // check if the address calling this function is the original owner of the NFT
-        if (_custody[nftContract][tokenId] != _msgSender()) {
+        // check if the owner is the original owner of the NFT
+        if (_custody[nftContract][tokenId] != owner) {
             revert NotTokenOwner();
         }
 
         // transfer the NFT to this contract.
-        c.safeTransferFrom(address(this), _msgSender(), tokenId);
+        c.safeTransferFrom(address(this), owner, tokenId);
 
         // record the custody of the token.
         _custody[nftContract][tokenId] = address(0);

@@ -33,6 +33,11 @@ const config: HardhatUserConfig = {
     ]
   },
   networks: {
+    kaia: {
+      url: `https://kaia.blockpi.network/v1/rpc/public`,
+      chainId: 8217,
+      accounts: [`0x${deployerWallet}`],
+    },
     blastSepolia: {
       url: "https://sepolia.blast.io",
       accounts: [`0x${deployerWallet}`],

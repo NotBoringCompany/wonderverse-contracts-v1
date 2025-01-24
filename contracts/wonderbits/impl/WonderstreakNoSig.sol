@@ -10,7 +10,7 @@ import "../utils/EventSignatures.sol";
  *
  * This is the 'no sig' version which does not require a signature to handle actions as the admin will handle the actions.
  */
-contract WonderstreakNoSig is AccessControl, EventSignatures {
+contract Wonderstreak is AccessControl, EventSignatures {
     // keeps track of the total amount of times a user has logged their daily login via this contract.
     mapping (address => uint256) internal _dailyLogins;
 
