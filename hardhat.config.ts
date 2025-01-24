@@ -22,6 +22,14 @@ const config: HardhatUserConfig = {
           browserURL: "https://kairos.kaiascope.com",
         },
       },
+      {
+        network: "kaia",
+        chainId: 8217,
+        urls: {
+          apiURL: "https://api.kaia.klaytnscope.com/api",
+          browserURL: "https://mainnet.kaiascope.com",
+        }
+      }
     ]
   },
   networks: {
