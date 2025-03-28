@@ -12,6 +12,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       kairos: 'unnecessary',
+      kaia: 'unnecessary',
     },
     customChains: [
       {
@@ -26,8 +27,10 @@ const config: HardhatUserConfig = {
         network: "kaia",
         chainId: 8217,
         urls: {
-          apiURL: "https://api.kaia.klaytnscope.com/api",
-          browserURL: "https://mainnet.kaiascope.com",
+          // apiURL: "https://api.kaia.klaytnscope.com/api",
+          // browserURL: "https://mainnet.kaiascope.com",
+          apiURL: "https://mainnet-api.kaiascan.io/hardhat-verify",
+          browserURL: "https://kaiascan.io",
         }
       }
     ]
