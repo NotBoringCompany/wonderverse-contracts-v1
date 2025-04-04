@@ -5,14 +5,14 @@ compiled_package_info:
     iota: "0000000000000000000000000000000000000000000000000000000000000002"
     std: "0000000000000000000000000000000000000000000000000000000000000001"
     wordcraft_move: "0000000000000000000000000000000000000000000000000000000000000000"
-  source_digest: EFB7306583CE92D1B2D31AA69767EDF8563A49406CF3C7976BA0EDDE17557AAB
+  source_digest: EE27224B16A2D8E28DCB66A9098025D4031C7AF77E3216C00D56C75D6E96EBA1
   build_flags:
-    dev_mode: false
-    test_mode: false
+    dev_mode: true
+    test_mode: true
     generate_docs: false
     install_dir: ~
     force_recompilation: false
-    lock_file: ".\\Move.lock"
+    lock_file: ~
     fetch_deps_only: false
     skip_fetch_latest_git_deps: false
     default_flavor: iota
